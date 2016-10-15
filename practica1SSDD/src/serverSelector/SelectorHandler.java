@@ -1,4 +1,5 @@
 package serverSelector;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -18,7 +19,7 @@ public class SelectorHandler {
 		clntChan.configureBlocking(false); // Must be nonblocking to register
 		// Register the selector with new channel for read and attach byte
 		// buffer
-		/**Se ha sustituido el buffer por HttpParser**/
+		/** Se ha sustituido el buffer por HttpParser **/
 		clntChan.register(key.selector(), SelectionKey.OP_READ, new HTTPParser());
 	}
 
@@ -29,17 +30,13 @@ public class SelectorHandler {
 		long bytesRead = clntChan.read(buf);
 		HTTPParser parser = (HTTPParser) key.attachment();
 		parser.parseRequest(buf);
-		if (parser.isComplete()) {
-			
-		} else if (parser.failed()) {
-			
-			clntChan.close();
-		}
+		if (parser.isComplete() || parser.failed())
+			key.interestOps(SelectionKey.OP_WRITE);
 		if (bytesRead == -1) { // Did the other end close?
 			clntChan.close();
 		} else if (bytesRead > 0) {
 			// Indicate via key that reading/writing are both of interest now.
-			key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+			key.interestOps(SelectionKey.OP_READ);
 		}
 	}
 
@@ -49,9 +46,9 @@ public class SelectorHandler {
 		 * channel not closed).
 		 */
 		// Retrieve data read earlier
-		ByteBuffer buf = (ByteBuffer) key.attachment();
-		buf.flip(); // Prepare buffer for writing
+		HTTPParser parser = (HTTPParser) key.attachment();		
 		SocketChannel clntChan = (SocketChannel) key.channel();
+		RequestHandler handler = new RequestHandler(parser.getPath(),parser.getMethod(),parser.getBody(),bufSize,clntChan);
 		clntChan.write(buf);
 		if (!buf.hasRemaining()) { // Buffer completely written?
 			// Nothing left, so no longer interested in writes
