@@ -1,40 +1,20 @@
 package serverThread;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+
 import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 
 public class GestorThreads implements Runnable {
-
-	public enum Status {
-		NOT_FOUND(404, "Not Found"), OK(200, "OK"), FORBIDDEN(403,
-				"403 Forbidden"), BAD_REQUEST(400, "Bad Request"), NOT_IMPLEMENTED(
-				501, "Not Implemented");
-
-		private int code;
-		private String description;
-
-		Status(int code, String description) {
-			this.code = code;
-			this.description = description;
-		}
-
-		public String getDescription() {
-			return description;
-		}
-
-		public int getCode() {
-			return code;
-		}
-	}
 
 	private Socket client;
 
@@ -47,75 +27,104 @@ public class GestorThreads implements Runnable {
 		InputStream in = null;
 		try {
 			in = client.getInputStream();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
-		BlockingHTTPParser parser = new BlockingHTTPParser();
-		parser.parseRequest(in);
+			BlockingHTTPParser parser = new BlockingHTTPParser();
+			parser.parseRequest(in);
 
-		if (!parser.failed()) {
-			if (isInWorkingDirectory(new File(parser.getPath()))) {
-				if (parser.getMethod().equals("GET")) {
-					File fichero = new File(parser.getPath().substring(1));
-					if (!fichero.exists()) {
-						handleGetReq(new File("notfound.html"),	Status.NOT_FOUND);
-					} else {
-						handleGetReq(fichero, Status.OK);
-					}
-				} else if (parser.getMethod().equals("POST")) {
-					String str = new String(parser.getBody().array());
-					String res[] = new String[2];
-					try {
+			if (!parser.failed()) {
+				if (isInWorkingDirectory(new File(parser.getPath()))) {
+					if (parser.getMethod().equals("GET")) {
+						File fichero = new File(parser.getPath().substring(1));
+						if (!fichero.exists()) {
+							try {
+								client.getOutputStream().write(
+										handleGetReq(new File("notfound.html"),
+												HTTPResponse.Status.NOT_FOUND));
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						} else {
+							client.getOutputStream().write(
+									handleGetReq(fichero,
+											HTTPResponse.Status.OK));
+						}
+					} else if (parser.getMethod().equals("POST")) {
+						String str = new String(parser.getBody().array());
+						String res[] = new String[2];
+
 						parseBodyPost(str, res);
-						handlePostReq(res[0], res[1]);
-					} catch (UnsupportedEncodingException e) {
-						e.printStackTrace();
-					} catch (IOException e){
-						e.printStackTrace();
+						client.getOutputStream().write(
+								handlePostReq(res[0], res[1]));
+
 					}
-					
+
+				} else {
+					client.getOutputStream().write(
+							handleGetReq(new File("forbidden.html"),
+									HTTPResponse.Status.FORBIDDEN));
 				}
 
 			} else {
-				handleGetReq(new File("forbidden.html"), Status.FORBIDDEN);
+				client.getOutputStream().write(
+						handleGetReq(new File("badrequest.html"),
+								HTTPResponse.Status.BAD_REQUEST));
 			}
+			client.close();
 
-		} else {
-			handleGetReq(new File("badrequest.html"), Status.BAD_REQUEST);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-
-		// OutputStream out = clntSock.getOutputStream();
 	}
 
-	private byte[] handlePostReq(String path, String content) throws IOException {
-		File fichero = new File(path);
-		boolean append= fichero.exists();
-		BufferedOutputStream buff = new BufferedOutputStream(new FileOutputStream(fichero,append));
-		buff.write(content.getBytes());
-		buff.close();
-		String response = new String("HTTP/1.1 200 OK\nContent-Type: "
-				+ Files.probeContentType(fichero.toPath()) + "\nContent-Length: " + fichero.length()
-				+ "\n\n<html><head>\n<title>¡Éxito!</title>\n</head><body>\n"
-				+ "<p>Se ha escrito lo siguiente en el fichero " + path + ":</p>\n<pre>\n" + content
-				+ "\n</pre>\n</body></html>\n");
-		return response.getBytes();
+	private byte[] handlePostReq(String path, String content) {
+		String probe = "text/html";
+		File fichero = null;
+		boolean append = false;
+		try {
+			fichero = new File(path);
+			append = fichero.exists();
+			BufferedOutputStream buff = new BufferedOutputStream(
+					new FileOutputStream(fichero, append));
+			buff.write(content.getBytes());
+			buff.close();
+		} catch (IOException e) {
+			e.getStackTrace();
+		}
+		// System.err.println(new String(content));
+		return new HTTPResponse(HTTPResponse.Status.OK, probe, content.getBytes())
+				.toBytes();
 	}
 
-	private byte[] handleGetReq(File file, Status stat) {
-		String header = 
-		
+	private byte[] handleGetReq(File file, HTTPResponse.Status stat) {
+		System.err.println("GET");
+		byte[] content = null;
+		String probe = "";
+		try {
+			probe = Files.probeContentType(file.toPath());
+			BufferedInputStream buff = new BufferedInputStream(
+					new FileInputStream(file));
+			content = new byte[(int) file.length()];
+			buff.read(content);
+			buff.close();
+		} catch (IOException e) {
+			e.getStackTrace();
+		}
+		// System.err.println(new String(content));
+		return new HTTPResponse(stat, probe, content).toBytes();
+
 	}
 
-	private boolean isInWorkingDirectory(File file) {
-		// TODO Auto-generated method stub
-		return false;
+	private static boolean isInWorkingDirectory(File fichero) {
+		String p = fichero.toString();
+		int numSep = p.length() - p.replace(File.separator, "").length();
+		return numSep == 1;
 	}
 
-	private static void parseBodyPost(String str, String res[]) throws UnsupportedEncodingException {
-		  str = URLDecoder.decode(str, "UTF-8");
-		  String splitStr[] = str.split("&");
-		  res[0] = splitStr[0].substring(splitStr[0].indexOf("=") + 1);
-		  res[1] = splitStr[1].substring(splitStr[1].indexOf("=") + 1);
-		 }
+	private static void parseBodyPost(String str, String res[])
+			throws UnsupportedEncodingException {
+		str = URLDecoder.decode(str, "UTF-8");
+		String splitStr[] = str.split("&");
+		res[0] = splitStr[0].substring(splitStr[0].indexOf("=") + 1);
+		res[1] = splitStr[1].substring(splitStr[1].indexOf("=") + 1);
+	}
 }

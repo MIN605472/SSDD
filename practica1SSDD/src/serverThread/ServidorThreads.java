@@ -1,8 +1,6 @@
 package serverThread;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -26,9 +24,6 @@ public class ServidorThreads {
 
 				Thread t = new Thread(new GestorThreads(clntSock));
 				t.run();
-
-				SocketAddress clientAddress = clntSock.getRemoteSocketAddress();
-				System.out.println("Handling client at " + clientAddress);
 
 			}
 		} catch (IOException e) {
