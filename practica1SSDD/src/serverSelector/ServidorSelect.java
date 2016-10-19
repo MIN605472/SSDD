@@ -8,7 +8,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 
 public class ServidorSelect {
-	private static final int BUFSIZE = 1024;
+	private static final int BUFSIZE = 4096;
 
 	public static void main(String[] args) {
 		System.out.println(args[0]);
@@ -31,29 +31,24 @@ public class ServidorSelect {
 		}
 
 		while (true) {
-			SelectionKey key = null;;
+			SelectionKey key = null;
 			try {
 				selector.select();
 				Iterator<SelectionKey> it = selector.selectedKeys().iterator();
 				while (it.hasNext()) {
 					key = it.next();
 					if (key.isAcceptable()) {
-						System.err.println("entra");
 						protocol.handleAccept(key);
 					}
-					// el socket del cliente tiene datos pendientes?
 					if (key.isReadable()) {
-						System.err.println("lecturag");
-
 						protocol.handleRead(key);
 					}
-					// Client socket channel is available for writing and
-					// key is valid (i.e., channel not closed)?
+
 					if (key.isValid() && key.isWritable()) {
 						protocol.handleWrite(key);
 
 					}
-					it.remove(); // remove from set of selected keys
+					it.remove();
 				}
 			} catch (IOException e) {
 				key.cancel();
