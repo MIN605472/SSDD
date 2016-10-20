@@ -23,6 +23,7 @@ public class HTTPRequestHandler {
 						return handleGetReq(fichero, HTTPResponse.Status.OK);
 					}
 				} else if (parser.getMethod().equals("POST")) {
+					System.err.println("post");
 					String str = new String(parser.getBody().array());
 					String res[] = new String[2];
 					parseBodyPost(str, res);
@@ -48,8 +49,23 @@ public class HTTPRequestHandler {
 		File f = new File(nombre);
 		f.createNewFile();
 		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
-		
-		return null;
+		byte bytesC[] = contenido.getBytes();
+		out.write(bytesC);
+		out.close();
+		String msg = makePostOkMessage(nombre, contenido);
+		return new HTTPResponse(HTTPResponse.Status.OK, "text/html", msg.getBytes(), null);
+
+	}
+
+	private static String makePostOkMessage(String nombre, String contenido) {
+		StringBuffer strBuf = new StringBuffer();
+		strBuf.append(
+				"<html><head>\n<title>¡Éxito!</title>\n</head><body>\n<h1>¡Éxito!</h1>\n<p>Se ha escrito lo siguiente en el fichero ");
+		strBuf.append(nombre);
+		strBuf.append(":</p>\n<pre>");
+		strBuf.append(contenido);
+		strBuf.append("</pre>\n</body></html>");
+		return strBuf.toString();
 	}
 
 	private static boolean isInWorkingDirectory(File fichero) {
@@ -59,9 +75,8 @@ public class HTTPRequestHandler {
 	}
 
 	private static void parseBodyPost(String str, String res[]) throws UnsupportedEncodingException {
-		str = URLDecoder.decode(str, "UTF-8");
 		String splitStr[] = str.split("&");
-		res[0] = splitStr[0].substring(splitStr[0].indexOf("=") + 1);
-		res[1] = splitStr[1].substring(splitStr[1].indexOf("=") + 1);
+		res[0] = URLDecoder.decode(splitStr[0].substring(splitStr[0].indexOf("=") + 1), "UTF-8");
+		res[1] = URLDecoder.decode(splitStr[1].substring(splitStr[1].indexOf("=") + 1), "UTF-8");
 	}
 }

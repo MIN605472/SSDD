@@ -28,6 +28,7 @@ public class SelectorHandler {
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 		int bytesRead = clntChan.read(buf);
 		buf.flip();
+		System.err.println(new String(buf.array()));
 		HTTPParser parser = pair.getFirst();
 		parser.parseRequest(buf);
 		if (parser.isComplete() || parser.failed()) {
