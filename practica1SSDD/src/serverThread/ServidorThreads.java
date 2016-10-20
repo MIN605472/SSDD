@@ -1,9 +1,16 @@
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: ServidorThreads.java
+ * TIEMPO: 17 horas en común todo el programa
+ * DESCRIPCION: clase que contiene el método principal, encargado de recibir las peticiones 
+ * y crear threads que se encarguen de su gestión
+ */
 package serverThread;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.lang.Thread;
 
 public class ServidorThreads {
@@ -22,7 +29,7 @@ public class ServidorThreads {
 			while (true) { // Run forever, accepting and servicing connections
 				Socket clntSock = servSock.accept(); // Get client connection
 
-				Thread t = new Thread(new GestorThreads(clntSock));
+				Thread t = new Thread(new GestorThreads(clntSock));//Crea thread para atender al cliente
 				t.run();
 
 			}
