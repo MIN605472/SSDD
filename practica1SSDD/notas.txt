@@ -1,9 +1,0 @@
-Comentar memoria el caso en el que el cliente solo mande la mitad del metodo (la primera linea de una peticion http) y entonces no guardamos esa
-peticion que esta por la mitad y que el usuario aun quiere enviar porque a lo mejor tiene un buffer de lectura muy pequeño
-
-Horas:
-3 comunes - 10/10/2016
-2 comunes - 14/10/2016
-4 comunes - 16/10/2016
-1 Marius - 16/10/2016
-3 comunes - 18/10/2016

@@ -25,9 +25,8 @@ public class ServidorSelect {
 	private static final int BUFSIZE = 4096;
 
 	public static void main(String[] args) {
-		System.out.println(args[0]);
-		if (args.length < 1) {
-			throw new IllegalArgumentException("Parametros(s): <Port> ...");
+		if (args.length != 1) {
+			throw new IllegalArgumentException("Parametros: <Port>");
 		}
 
 		ServerSocketChannel serverSocket;

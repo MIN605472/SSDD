@@ -16,8 +16,8 @@ import java.lang.Thread;
 public class ServidorThreads {
 
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			throw new IllegalArgumentException("Parametros(s): <Port> ...");
+		if (args.length != 1) {
+			throw new IllegalArgumentException("Parametros: <Port> ");
 		}
 		int servPort = Integer.parseInt(args[0]);
 		ServerSocket servSock = null;

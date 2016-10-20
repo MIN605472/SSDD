@@ -40,8 +40,6 @@ public class GestorThreads implements Runnable {
 
 			BlockingHTTPParser parser = new BlockingHTTPParser();
 			parser.parseRequest(in);
-			System.err.println(new String(parser.getBody().array()));
-
 			if (!parser.failed()) {
 				// Solo permitimos el acceso al fichero si se encuentra en el
 				// directorio raíz del WS
