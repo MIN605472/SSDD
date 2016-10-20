@@ -1,3 +1,13 @@
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: HTTPResponse.java
+ * TIEMPO: 17 horas en comun todo el programa
+ * DESCRIPCION: el fichero contiene una clase que representa una respuesta devuelta 
+ * por el servidor HTTP al cliente
+ * 
+ */
+
 package serverSelector;
 
 import java.io.IOException;
@@ -55,6 +65,11 @@ public class HTTPResponse {
 
 	}
 
+	/**
+	 * Metodo que devuelve los headers de esta respuesta
+	 * 
+	 * @return string con los headers de la respuesta
+	 */
 	private String headers() {
 		StringBuffer str = new StringBuffer("HTTP/");
 		str.append(VERSION);
@@ -70,6 +85,13 @@ public class HTTPResponse {
 		return str.toString();
 	}
 
+	/**
+	 * Metodo que escribe esta respuesta en el socketchannel dados
+	 * 
+	 * @param socket
+	 *            por donde enviar la respuesta
+	 * @throws IOException
+	 */
 	public void send(SocketChannel socket) throws IOException {
 		if (fChnl != null) {
 			fChnl.read(response);
@@ -79,6 +101,13 @@ public class HTTPResponse {
 		response.compact();
 	}
 
+	/**
+	 * Metodo que dice si hay datos de esta respuesta por enviar
+	 * 
+	 * @return true en caso de que aun haya datos por enviar, false en caso
+	 *         contrario
+	 * @throws IOException
+	 */
 	public boolean hasRemaining() throws IOException {
 		if (fChnl != null) {
 			return fChnl.position() != fChnl.size() || response.position() != 0;
@@ -88,6 +117,11 @@ public class HTTPResponse {
 
 	}
 
+	/**
+	 * Enumeracion de los distintos codigos de estado de una respuesta HTTP
+	 * junto con un pequeña descripicion de estos
+	 *
+	 */
 	public enum Status {
 		NOT_FOUND(404, "Not Found"), OK(200, "OK"), FORBIDDEN(403, "403 Forbidden"), BAD_REQUEST(400,
 				"Bad Request"), NOT_IMPLEMENTED(501, "Not Implemented");
@@ -100,10 +134,20 @@ public class HTTPResponse {
 			this.description = description;
 		}
 
+		/**
+		 * Devuelve la descripcion del codigo de estado
+		 * 
+		 * @return una cadena con la descripcion del codigo de estado
+		 */
 		public String getDescription() {
 			return description;
 		}
 
+		/**
+		 * Devuelve el codigo de estado
+		 * 
+		 * @return entero con el codigo de estado
+		 */
 		public int getCode() {
 			return code;
 		}

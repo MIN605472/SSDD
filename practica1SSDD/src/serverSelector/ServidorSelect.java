@@ -1,3 +1,12 @@
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: HTTPResponse.java
+ * TIEMPO: 17 horas en comun todo el programa
+ * DESCRIPCION: el fichero contiene el metodo principal del servior basado en sockets no bloqueantes
+ * 
+ */
+
 package serverSelector;
 
 import java.io.IOException;
@@ -7,6 +16,11 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 
+/**
+ * Clae que contiene el metodo principal del servidor basado en sockets no
+ * bloqueantes
+ *
+ */
 public class ServidorSelect {
 	private static final int BUFSIZE = 4096;
 

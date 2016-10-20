@@ -1,3 +1,12 @@
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: HTTPResponse.java
+ * TIEMPO: 17 horas en comun todo el programa
+ * DESCRIPCION: el fichero contiene una clase que tiene metodos para tratar las operaciones de 
+ * lectura, escritura y aceptacion de un socketchannel
+ * 
+ */
 package serverSelector;
 
 import java.io.IOException;
@@ -6,6 +15,11 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+/**
+ * Clase que tiene metodos para tratar las operacioens de lectura, escritura y
+ * aceptacion de un socketchannel
+ *
+ */
 public class SelectorHandler {
 
 	private int bufSize;
@@ -14,6 +28,13 @@ public class SelectorHandler {
 		this.bufSize = bufSize;
 	}
 
+	/**
+	 * Metodo que trata un accept
+	 * 
+	 * @param key
+	 *            key que esta lista para aceptar conexion
+	 * @throws IOException
+	 */
 	public void handleAccept(SelectionKey key) throws IOException {
 		SocketChannel clntChan = ((ServerSocketChannel) key.channel()).accept();
 		clntChan.configureBlocking(false);
@@ -21,6 +42,13 @@ public class SelectorHandler {
 				new Pair<HTTPParser, HTTPResponse>(new HTTPParser(), null));
 	}
 
+	/**
+	 * Metodo que trata una lectura
+	 * 
+	 * @param key
+	 *            key que esta lista para leer
+	 * @throws IOException
+	 */
 	public void handleRead(SelectionKey key) throws IOException {
 		SocketChannel clntChan = (SocketChannel) key.channel();
 		@SuppressWarnings("unchecked")
@@ -42,6 +70,13 @@ public class SelectorHandler {
 		}
 	}
 
+	/**
+	 * Metodo que trata una escritura
+	 * 
+	 * @param key
+	 *            key que esta lista para escribir
+	 * @throws IOException
+	 */
 	public void handleWrite(SelectionKey key) throws IOException {
 		@SuppressWarnings("unchecked")
 		Pair<HTTPParser, HTTPResponse> pair = (Pair<HTTPParser, HTTPResponse>) key.attachment();
