@@ -1,7 +1,7 @@
 /*
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
- * FICHERO: HTTPResponse.java
+ * FICHERO: SelectorHandler.java
  * TIEMPO: 17 horas en comun todo el programa
  * DESCRIPCION: el fichero contiene una clase que tiene metodos para tratar las operaciones de 
  * lectura, escritura y aceptacion de un socketchannel
@@ -56,7 +56,6 @@ public class SelectorHandler {
 		ByteBuffer buf = ByteBuffer.allocate(bufSize);
 		int bytesRead = clntChan.read(buf);
 		buf.flip();
-		System.err.println(new String(buf.array()));
 		HTTPParser parser = pair.getFirst();
 		parser.parseRequest(buf);
 		if (parser.isComplete() || parser.failed()) {

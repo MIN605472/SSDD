@@ -1,7 +1,7 @@
 /*
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
- * FICHERO: HTTPResponse.java
+ * FICHERO: ServidorSelect.java
  * TIEMPO: 17 horas en comun todo el programa
  * DESCRIPCION: el fichero contiene el metodo principal del servior basado en sockets no bloqueantes
  * 
@@ -65,6 +65,8 @@ public class ServidorSelect {
 					it.remove();
 				}
 			} catch (IOException e) {
+				// Puede ocurrir que el cliente cierre la conexion abruptamente
+				// y el canal no se haya cerrado
 				key.cancel();
 				e.printStackTrace();
 			}

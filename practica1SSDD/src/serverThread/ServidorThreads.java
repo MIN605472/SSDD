@@ -15,21 +15,21 @@ import java.lang.Thread;
 
 public class ServidorThreads {
 
-	public static void main(String[] args){
+	public static void main(String[] args) {
 		if (args.length < 1) {
 			throw new IllegalArgumentException("Parametros(s): <Port> ...");
 		}
-
 		int servPort = Integer.parseInt(args[0]);
-		ServerSocket servSock=null;
+		ServerSocket servSock = null;
 		try {
 			// Create a server socket to accept client connection requests
 			servSock = new ServerSocket(servPort);
-
-			while (true) { // Run forever, accepting and servicing connections
-				Socket clntSock = servSock.accept(); // Get client connection
-
-				Thread t = new Thread(new GestorThreads(clntSock));//Crea thread para atender al cliente
+			// Bucle infinito que acepta y da servicio a conexiones entrantes
+			while (true) {
+				// Aceptar conexion con cliente
+				Socket clntSock = servSock.accept();
+				// Crea thread para atender al cliente
+				Thread t = new Thread(new GestorThreads(clntSock));
 				t.run();
 
 			}
@@ -42,7 +42,5 @@ public class ServidorThreads {
 				e.printStackTrace();
 			}
 		}
-
 	}
-
 }

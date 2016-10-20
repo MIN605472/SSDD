@@ -45,7 +45,6 @@ public class HTTPRequestHandler {
 						return handleGetReq(fichero, HTTPResponse.Status.OK);
 					}
 				} else if (parser.getMethod().equals("POST")) {
-					System.err.println("post");
 					String str = new String(parser.getBody().array());
 					String res[] = new String[2];
 					parseBodyPost(str, res);
@@ -92,8 +91,7 @@ public class HTTPRequestHandler {
 	 */
 	private static HTTPResponse handlePostReq(String nombre, String contenido) throws IOException {
 		File f = new File(nombre);
-		f.createNewFile();
-		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f));
+		BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(f, true));
 		byte bytesC[] = contenido.getBytes();
 		out.write(bytesC);
 		out.close();

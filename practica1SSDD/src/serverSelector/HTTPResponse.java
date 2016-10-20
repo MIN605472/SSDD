@@ -28,12 +28,12 @@ public class HTTPResponse {
 	private long size;
 
 	/**
-	 * A la hora de constuir el objeto hay que decidir si el cuerpo de la
+	 * A la hora de construir el objeto hay que decidir si el cuerpo de la
 	 * respuesta proviene o no de un fichero. Si contenido del cuerpo esta en un
 	 * fichero utilizar fChnl y dejar body a null. Si por el contrario el cuerpo
 	 * no esta en un fichero usar el parametro body y dejar fChnl a null. En
 	 * caso de que alguno de los dos parametros (body y fChnl) no este a null el
-	 * comportamiento de los metodos del objeto no estan definidos
+	 * comportamiento de los metodos del objeto no estan definido
 	 * 
 	 * @param code
 	 *            codigo del estado de la respuesta
@@ -77,11 +77,11 @@ public class HTTPResponse {
 		str.append(code.getCode());
 		str.append(" ");
 		str.append(code.getDescription());
-		str.append("\nContent-Type: ");
+		str.append("\r\nContent-Type: ");
 		str.append(contentType);
-		str.append("\nContent-Length: ");
+		str.append("\r\nContent-Length: ");
 		str.append(size);
-		str.append("\n\n");
+		str.append("\r\n\r\n");
 		return str.toString();
 	}
 

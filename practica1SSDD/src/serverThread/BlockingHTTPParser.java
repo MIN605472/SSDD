@@ -50,7 +50,7 @@ public class BlockingHTTPParser {
     private ByteBuffer body;
     private String method = "";
     private String path = "";
-    private String remnant = "";
+	private String remnant = "";
 
     private Pattern methodPattern = Pattern.compile("\\s*(\\w+)\\s+(\\S+)\\s+HTTP/1.1\\s*");
     private Pattern bodyLengthPattern = Pattern.compile("\\s*Content-Length:\\s*(\\d+)\\s*");
