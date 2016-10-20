@@ -1,3 +1,10 @@
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: BlockingHTTPParser.java
+ * TIEMPO: 17 horas en común todo el programa
+ * DESCRIPCION: Parser para la petición HTTP del servidor de threads.
+ */
 package serverThread;
 import java.io.InputStream;
 import java.io.IOException;
