@@ -25,7 +25,7 @@ public class WorkerServer implements Worker {
 			Registry registry = LocateRegistry.getRegistry(dir);
 			String nombre = generarNombre(registry.list());
 			registry.bind(nombre, stub);
-
+						
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		} catch (AlreadyBoundException e) {
@@ -39,7 +39,7 @@ public class WorkerServer implements Worker {
 		Random r = new Random();
 		do {
 			nombre = "Worker" + r.nextInt(1000);
-		} while (!estaNombre(nombre, list));
+		} while (estaNombre(nombre, list));
 
 		return nombre;
 
@@ -60,12 +60,12 @@ public class WorkerServer implements Worker {
 		ArrayList<Integer> primos = new ArrayList<Integer>();
 		// initially assume all integers are prime
 		boolean[] isPrime = new boolean[max + 1];
-		for (int i = min; i <= max; i++) {
+		for (int i = 2; i <= max; i++) {
 			isPrime[i] = true;
 		}
 
 		// mark non-primes <= n using Sieve of Eratosthenes
-		for (int factor = min; factor * factor <= max; factor++) {
+		for (int factor = 2; factor * factor <= max; factor++) {
 
 			// if factor is prime, then mark multiples of factor as nonprime
 			// suffices to consider mutiples factor, factor+1, ..., n/factor
