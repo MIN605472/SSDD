@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
-public class WorkerServer implements Worker {
+public class WorkerServer // implements Worker
+{
 
     private static String dir = "";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws RemoteException {
 	if (args.length > 1)
 	    throw new IllegalArgumentException("El parametro es [IP_registro]");
 	if (args.length == 1)
@@ -19,17 +20,23 @@ public class WorkerServer implements Worker {
 	else
 	    dir = "localhost";
 
-	try {
-	    WorkerServer server = new WorkerServer();
-	    Worker stub = (Worker) UnicastRemoteObject.exportObject(server, 0);
-	    Registry registry = LocateRegistry.getRegistry(dir);
-	    String nombre = generarNombre(registry.list());
-	    registry.bind(nombre, stub);
-
-	} catch (RemoteException e) {
-	    e.printStackTrace();
-	} catch (AlreadyBoundException e) {
-	    e.printStackTrace();
+	/*
+	 * try { WorkerServer server = new WorkerServer(); Worker stub =
+	 * (Worker) UnicastRemoteObject.exportObject(server, 0); Registry
+	 * registry = LocateRegistry.getRegistry(dir); String nombre =
+	 * generarNombre(registry.list()); registry.bind(nombre, stub);
+	 * 
+	 * } catch (RemoteException e) { e.printStackTrace(); } catch
+	 * (AlreadyBoundException e) { e.printStackTrace(); }
+	 */
+	ArrayList<Integer> arr = encuentraPrimos(0, 100000000);
+	for (Integer i : arr) {
+	    System.err.println(i);
+	}
+	System.err.println("SHIEEET");
+	arr = encuentraPrimos(0, 100000000);
+	for (Integer i : arr) {
+	    System.err.println(i);
 	}
 
     }
@@ -54,8 +61,8 @@ public class WorkerServer implements Worker {
     }
 
     // http://introcs.cs.princeton.edu/java/14array/PrimeSieve.java.html
-    public ArrayList<Integer> encuentraPrimos(int min, int max) throws RemoteException {
-	long t1 = System.nanoTime() / 1000000;
+    public static ArrayList<Integer> encuentraPrimos(int min, int max) throws RemoteException {
+	long t1 = System.nanoTime();
 	ArrayList<Integer> primos = new ArrayList<Integer>();
 	// initially assume all integers are prime
 	boolean[] isPrime = new boolean[max + 1];
@@ -73,7 +80,7 @@ public class WorkerServer implements Worker {
 		}
 	    }
 	}
-	long t2 = System.nanoTime() / 1000000;
+	long t2 = System.nanoTime();
 	print("hello sin añadr " + (t2 - t1));
 
 	// Añade los primos a la arraylist que hay que devolver
@@ -81,7 +88,7 @@ public class WorkerServer implements Worker {
 	    if (isPrime[i])
 		primos.add(i);
 	}
-	t2 = System.nanoTime() / 1000000;
+	t2 = System.nanoTime();
 	print("hello añadir " + (t2 - t1));
 
 	return primos;
