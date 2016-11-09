@@ -6,32 +6,33 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class WorkerServer implements Worker
+public class CopyOfWorkerServer// implements Worker
 {
 
 	private static String dir = "";
 
 	public static void main(String[] args) throws RemoteException {
-		if (args.length > 1)
-			throw new IllegalArgumentException("El parametro es [IP_registro]");
-		if (args.length == 1)
-			dir = args[0];
-		else
-			dir = "localhost";
 
-		try {
-			WorkerServer server = new WorkerServer();
-			Worker stub = (Worker) UnicastRemoteObject.exportObject(server, 0);
-			Registry registry = LocateRegistry.getRegistry(dir);
-			String nombre = generarNombre(registry.list());
-			registry.bind(nombre, stub);
-
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		} catch (AlreadyBoundException e) {
-			e.printStackTrace();
-		}
+		ArrayList<Integer> arr = encuentraPrimos(0, 11111);		
+		System.err.println();
+		ArrayList<Integer> arr2 = encuentraPrimos(11111, 11111*2);		
+		System.err.println();
+		ArrayList<Integer> arr3 = encuentraPrimos(11111*2, 11111*3);
+		System.err.println();
+		ArrayList<Integer> arr4 = encuentraPrimos(11111*3, 11111*4);
+		System.err.println();
+		ArrayList<Integer> arr5 = encuentraPrimos(11111*4, 11111*5);
+		System.err.println();
+		ArrayList<Integer> arr6 = encuentraPrimos(11111*5, 11111*6);
+		System.err.println();
+		ArrayList<Integer> arr7 = encuentraPrimos(11111*6, 11111*7);
+		System.err.println();
+		ArrayList<Integer> arr8 = encuentraPrimos(11111*7, 11111*8);
+		System.err.println();
+		ArrayList<Integer> arr9 = encuentraPrimos(11111*8, 11111*9);
+		System.err.println();
 		
+
 		// arr = encuentraPrimos(0, 1000000000); limite de lo fisico, donde lo
 		// irreal se junta con lo posible.
 
@@ -57,7 +58,7 @@ public class WorkerServer implements Worker
 	}
 
 	// http://introcs.cs.princeton.edu/java/14array/PrimeSieve.java.html
-	public ArrayList<Integer> encuentraPrimos(int min, int max)
+	public static ArrayList<Integer> encuentraPrimos(int min, int max)
 			throws RemoteException {
 		long t1 = System.nanoTime();
 		boolean criba[] = new boolean[max + 1];
@@ -71,7 +72,7 @@ public class WorkerServer implements Worker
 				}
 			}
 		}
-
+		long t2 = System.nanoTime();
 		if (min <= 2) {
 			listaConPrimos.add(2);
 		}
@@ -82,8 +83,9 @@ public class WorkerServer implements Worker
 				listaConPrimos.add(i);
 			}
 		}
-		long t2 = System.nanoTime();
+		long t3 = System.nanoTime();
 		System.err.println(t2 - t1);
+		System.err.println(t3 - t2);
 		return listaConPrimos;
 	}
 
