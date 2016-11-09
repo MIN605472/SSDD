@@ -4,7 +4,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Random;
 
 public class WorkerServer // implements Worker
@@ -30,14 +29,14 @@ public class WorkerServer // implements Worker
 	 * (AlreadyBoundException e) { e.printStackTrace(); }
 	 */
 	ArrayList<Integer> arr = encuentraPrimos(0, 100000000);
-	for (Integer i : arr) {
-	    System.err.println(i);
-	}
+	/*
+	 * for (Integer i : arr) { System.err.println(i); }
+	 */
 	System.err.println("SHIEEET");
 	arr = encuentraPrimos(0, 100000000);
-	for (Integer i : arr) {
-	    System.err.println(i);
-	}
+	/*
+	 * for (Integer i : arr) { System.err.println(i); }
+	 */
 
     }
 
@@ -63,35 +62,31 @@ public class WorkerServer // implements Worker
     // http://introcs.cs.princeton.edu/java/14array/PrimeSieve.java.html
     public static ArrayList<Integer> encuentraPrimos(int min, int max) throws RemoteException {
 	long t1 = System.nanoTime();
-	ArrayList<Integer> primos = new ArrayList<Integer>();
-	// initially assume all integers are prime
-	boolean[] isPrime = new boolean[max + 1];
-	for (int i = 2; i <= max; i++) {
-	    isPrime[i] = true;
-	}
-	// mark non-primes <= n using Sieve of Eratosthenes
-	for (int factor = 2; factor * factor <= max; factor++) {
-
-	    // if factor is prime, then mark multiples of factor as nonprime
-	    // suffices to consider mutiples factor, factor+1, ..., n/factor
-	    if (isPrime[factor]) {
-		for (int j = factor; factor * j <= max; j++) {
-		    isPrime[factor * j] = false;
+	boolean criba[] = new boolean[max + 1];
+	criba[0] = true;
+	criba[1] = true;
+	ArrayList<Integer> listaConPrimos = new ArrayList<>();
+	for (int factor = 3; factor * factor <= max; factor += 2) {
+	    if (!criba[factor]) {
+		for (int j = factor * factor; j <= max; j += 2 * factor) {
+		    criba[j] = true;
 		}
 	    }
 	}
-	long t2 = System.nanoTime();
-	print("hello sin añadr " + (t2 - t1));
 
-	// Añade los primos a la arraylist que hay que devolver
-	for (int i = min; i <= max; i++) {
-	    if (isPrime[i])
-		primos.add(i);
+	if (min <= 2) {
+	    listaConPrimos.add(2);
 	}
-	t2 = System.nanoTime();
-	print("hello añadir " + (t2 - t1));
+	min = min % 2 == 0 ? min + 1 : min;
 
-	return primos;
+	for (int i = min; i < max; i += 2) {
+	    if (!criba[i]) {
+		listaConPrimos.add(i);
+	    }
+	}
+	long t2 = System.nanoTime();
+	System.err.println(t2 - t1);
+	return listaConPrimos;
     }
 
     public static synchronized void print(String str) {
