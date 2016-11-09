@@ -21,10 +21,9 @@ public class WorkerFactoryServer implements WorkerFactory {
 	else
 	    dir = "localhost";
 	try {
-
+	    System.setProperty("java.rmi.server.hostname", dir);
 	    WorkerFactoryServer server = new WorkerFactoryServer();
 	    WorkerFactory stub = (WorkerFactory) UnicastRemoteObject.exportObject(server, 0);
-
 	    registry = LocateRegistry.getRegistry(dir);
 	    registry.bind("WorkerFactory", stub);
 	} catch (RemoteException e) {
