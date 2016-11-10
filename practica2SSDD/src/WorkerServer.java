@@ -3,7 +3,7 @@
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
  * FICHERO: WorkerServer.java
- * TIEMPO:
+ * TIEMPO: 16 comunes horas todo el proyecto
  * DESCRIPCION: el fichero contiene la clase que implementa la interfaz Worker
  * 
  */
@@ -27,7 +27,7 @@ public class WorkerServer implements Worker {
     public static void main(String[] args) {
         if (args.length > 1) {
             throw new IllegalArgumentException(
-                    "El parametro es [IP_registro]");
+                    "El parametro del WorkerServer es: [IP_registro]");
         }
         if (args.length == 1) {
             dir = args[0];
@@ -36,22 +36,16 @@ public class WorkerServer implements Worker {
         }
 
         try {
-            System.setProperty("java.rmi.server.hostname", dir);
             WorkerServer server = new WorkerServer();
             Worker stub = (Worker) UnicastRemoteObject.exportObject(server, 0);
             Registry registry = LocateRegistry.getRegistry(dir);
             String nombre = generarNombre(registry.list());
             registry.bind(nombre, stub);
-
         } catch (RemoteException e) {
             e.printStackTrace();
         } catch (AlreadyBoundException e) {
             e.printStackTrace();
         }
-
-        // arr = encuentraPrimos(0, 1000000000); limite de lo fisico, donde lo
-        // irreal se junta con lo posible.
-
     }
 
     /**
@@ -92,6 +86,14 @@ public class WorkerServer implements Worker {
 
     public ArrayList<Integer> encuentraPrimos(int min, int max)
             throws RemoteException {
+        if (max < min) {
+            throw new IllegalArgumentException(
+                    "El parametro max no puede ser mayor que min");
+        }
+        if (min < 0) {
+            throw new IllegalArgumentException(
+                    "El parmetro min ha de ser positiovo");
+        }
         long t1 = System.nanoTime();
         boolean criba[] = new boolean[max + 1];
         criba[0] = true;
@@ -104,13 +106,12 @@ public class WorkerServer implements Worker {
                 }
             }
         }
-
         if (min <= 2) {
             listaConPrimos.add(2);
         }
-        min = min % 2 == 0 ? min + 1 : min;
+        min = (min % 2 == 0) ? min + 1 : min;
 
-        for (int i = min; i < max; i += 2) {
+        for (int i = min; i <= max; i += 2) {
             if (!criba[i]) {
                 listaConPrimos.add(i);
             }

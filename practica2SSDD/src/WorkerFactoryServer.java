@@ -3,7 +3,7 @@
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
  * FICHERO: WorkerFactoryServer.java
- * TIEMPO:
+ * TIEMPO: 16 comunes horas todo el proyecto
  * DESCRIPCION: el fichero contiene la clase que implementa la interfaz WorkerFactory
  * 
  */
@@ -30,7 +30,7 @@ public class WorkerFactoryServer implements WorkerFactory {
     public static void main(String[] args) {
         if (args.length > 1) {
             throw new IllegalArgumentException(
-                    "El parametro es [IP_registro]");
+                    "El parametro del WrokerFactoryServer es: [IP_registro]");
         }
         if (args.length == 1) {
             dir = args[0];
@@ -38,7 +38,6 @@ public class WorkerFactoryServer implements WorkerFactory {
             dir = "localhost";
         }
         try {
-            System.setProperty("java.rmi.server.hostname", dir);
             WorkerFactoryServer server = new WorkerFactoryServer();
             WorkerFactory stub = (WorkerFactory) UnicastRemoteObject
                     .exportObject(server, 0);

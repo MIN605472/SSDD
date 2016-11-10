@@ -1,8 +1,9 @@
+
 /*
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
  * FICHERO: Startup.java
- * TIEMPO:
+ * TIEMPO: 16 comunes horas todo el proyecto
  * DESCRIPCION: Fichero que contiene una clase usada para el lanzamiento 
  * de otros main
  * 
@@ -14,7 +15,8 @@
  */
 public class Startup {
 
-    private static final String MENSAJE_ERROR = "Los parametros son -c, -a o -u";
+    private static final String MENSAJE_ERROR = "Los parametros son: "
+            + "-c | -a | -u";
 
     public static void main(String[] args) {
         if (args.length == 0) {

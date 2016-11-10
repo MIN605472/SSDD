@@ -3,7 +3,7 @@
  * AUTOR: Marius Nemtanu, Pablo Piedrafita
  * NIA: 605472, 691812
  * FICHERO: Worker.java
- * TIEMPO:
+ * TIEMPO: 16 comunes horas todo el proyecto
  * DESCRIPCION: el fichero contiene la interfaz de un objeto remoto 
  * que encuentra los primos en un intervalo
  * 
