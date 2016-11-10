@@ -1,119 +1,150 @@
+
+/*
+ * AUTOR: Marius Nemtanu, Pablo Piedrafita
+ * NIA: 605472, 691812
+ * FICHERO: Cliente.java
+ * TIEMPO:
+ * DESCRIPCION: el fichero contiene la clase que representa un cliente que 
+ * va a pedir a un objeto remoto (WorkerFactory) otros objetos remotos (Worker) 
+ * que calculan numeros primos en un intervalo
+ * 
+ */
+
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
 
+/**
+ * Clase que representa un cliente que pide al objeto remoto WorkerFactory otros
+ * objetos remotos, Worker, que calculan numeros primos en un intervalo dado
+ *
+ */
 public class Cliente {
 
     private static String dir = "";
     private static ArrayList<ArrayList<Integer>> global;
 
-    private static class PalThread implements Runnable {
-
-	private int min, max, i;
-	private Worker worker;
-
-	public PalThread(Worker worker, int min, int max, int i) {
-	    this.worker = worker;
-	    this.min = min;
-	    this.max = max;
-	    this.i = i;
-	}
-
-	public void run() {
-	    try {
-		long t1 = System.currentTimeMillis();
-		global.add(i, worker.encuentraPrimos(min, max));
-		long t2 = System.currentTimeMillis();
-		print("Soy " + i + " y he terminado en : " + ((t2 - t1)));
-	    } catch (RemoteException e) {
-		e.printStackTrace();
-	    }
-
-	}
-    }
-
     public static synchronized void print(String str) {
-	System.err.println(str);
+        System.err.println(str);
     }
 
     public static void main(String[] args) {
-	if (args.length > 4 || args.length < 3)
-	    throw new IllegalArgumentException("Los parametros son min max n [IP_registro]");
-	if (args.length == 3)
-	    dir = "localhost";
-	else
-	    dir = args[3];
+        if (args.length > 4 || args.length < 3)
+            throw new IllegalArgumentException(
+                    "Los parametros son min max n [IP_registro]");
+        if (args.length == 3)
+            dir = "localhost";
+        else
+            dir = args[3];
 
-	int min = Integer.parseInt(args[0]);
-	int max = Integer.parseInt(args[1]);
-	int n = Integer.parseInt(args[2]);
-	Thread[] t;
+        int min = Integer.parseInt(args[0]);
+        int max = Integer.parseInt(args[1]);
+        int n = Integer.parseInt(args[2]);
+        Thread[] t;
 
-	try {
-	    Registry registry = LocateRegistry.getRegistry(dir);
-	    WorkerFactory factory = (WorkerFactory) registry.lookup("WorkerFactory");
-	    ArrayList<Worker> workers = factory.dameWorkers(n);
-	    if (workers == null) {
-		System.err.println("No hay tantos workers como ha pedido");
-	    } else {
-		int q = (max - min) / n;
-		int r = (max - min) % n;
+        try {
+            Registry registry = LocateRegistry.getRegistry(dir);
+            WorkerFactory factory = (WorkerFactory) registry
+                    .lookup("WorkerFactory");
+            ArrayList<Worker> workers = factory.dameWorkers(n);
+            if (workers == null) {
+                System.err.println("No hay tantos workers como ha pedido");
+            } else {
+                int q = (max - min) / n;
+                int r = (max - min) % n;
 
-		if (r != 0) {
-		    t = new Thread[n + 1];
-		    global = new ArrayList<>(n + 1);
+                if (r != 0) {
+                    t = new Thread[n + 1];
+                    global = new ArrayList<>(n + 1);
 
-		} else {
-		    t = new Thread[n];
-		    global = new ArrayList<>(n);
+                } else {
+                    t = new Thread[n];
+                    global = new ArrayList<>(n);
 
-		}
-		for (int i = 0; i < n; i++) {
-		    System.err.println(min + q * i);
-		    System.err.println(min + q * i + q);
-		    t[i] = new Thread(new PalThread(workers.get(i), min + q * i, min + q * i + q, i));
-		}
-		if (r != 0) {
-		    System.err.println("resto " + r);
-		    System.err.println(max - r);
-		    System.err.println(max);
-		    t[n] = new Thread(new PalThread(workers.get(0), max - r, max, n));
-		}
+                }
+                for (int i = 0; i < n; i++) {
+                    System.err.println(min + q * i);
+                    System.err.println(min + q * i + q);
+                    t[i] = new Thread(new ThreadCalculo(workers.get(i),
+                            min + q * i, min + q * i + q, i));
+                }
+                if (r != 0) {
+                    System.err.println("resto " + r);
+                    System.err.println(max - r);
+                    System.err.println(max);
+                    t[n] = new Thread(new ThreadCalculo(workers.get(0),
+                            max - r, max, n));
+                }
 
-		for (int i = 0; i < t.length; i++) {
-		    t[i].run();
-		}
+                for (int i = 0; i < t.length; i++) {
+                    t[i].run();
+                }
 
-		for (int i = 0; i < t.length; i++) {
-		    try {
-			t[i].join();
-		    } catch (InterruptedException e) {
-			e.printStackTrace();
-		    }
-		}
-		mostrarPrimos(global);
+                for (int i = 0; i < t.length; i++) {
+                    try {
+                        t[i].join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                mostrarPrimos(global);
 
-	    }
+            }
 
-	} catch (NotBoundException e) {
-	    e.printStackTrace();
-	} catch (NumberFormatException e) {
-	    System.err.println("Los parametros deben de ser enteros.");
-	    e.printStackTrace();
-	} catch (RemoteException e) {
-	    e.printStackTrace();
-	}
+        } catch (NotBoundException e) {
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+            System.err.println("Los parametros deben de ser enteros.");
+            e.printStackTrace();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
 
     }
 
+    /**
+     * Metodo que muestra por pantalla los numeros que haya en primos
+     * 
+     * @param primos
+     *            una lista de listas que contienen enteros
+     */
     private static void mostrarPrimos(ArrayList<ArrayList<Integer>> primos) {
-	for (ArrayList<Integer> a : primos) {
-	    for (Integer i : a) {
-		System.out.println(i);
-	    }
-	}
+        for (ArrayList<Integer> a : primos) {
+            for (Integer i : a) {
+                System.out.println(i);
+            }
+        }
+    }
+
+    /**
+     * Clase en la que se calcula los numeros primos en un intervalo
+     * 
+     */
+    private static class ThreadCalculo implements Runnable {
+
+        private int min, max, i;
+        private Worker worker;
+
+        public ThreadCalculo(Worker worker, int min, int max, int i) {
+            this.worker = worker;
+            this.min = min;
+            this.max = max;
+            this.i = i;
+        }
+
+        public void run() {
+            try {
+                long t1 = System.currentTimeMillis();
+                global.add(i, worker.encuentraPrimos(min, max));
+                long t2 = System.currentTimeMillis();
+                print("Soy " + i + " y he terminado en : " + ((t2 - t1)));
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 
 }
