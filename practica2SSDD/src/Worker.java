@@ -25,7 +25,8 @@ public interface Worker extends Remote {
      *            parte baja del intervalo (inclusive)
      * @param max
      *            parte alta del intervalo (inclusive)
-     * @return ArrayList con los numeros primos entre min y max, ambos inclusive
+     * @return ArrayList con los numeros primos entre min y max, ambos
+     *         inclusive
      * @throws RemoteException
      */
     java.util.ArrayList<Integer> encuentraPrimos(int min, int max)

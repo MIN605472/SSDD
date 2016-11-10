@@ -15,8 +15,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Clase que representa un cliente que pide al objeto remoto WorkerFactory
@@ -61,10 +61,10 @@ public class Cliente {
                 int r = (max - min) % n;
                 if (r != 0) {
                     t = new Thread[n + 1];
-                    global = new HashMap<>(n + 1);
+                    global = new ConcurrentHashMap<>(n + 1);
                 } else {
                     t = new Thread[n];
-                    global = new HashMap<>(n);
+                    global = new ConcurrentHashMap<>(n);
 
                 }
                 for (int i = 0; i < n; i++) {
@@ -154,10 +154,7 @@ public class Cliente {
 
         public void run() {
             try {
-                long t1 = System.currentTimeMillis();
                 global.put(i, worker.encuentraPrimos(min, max));
-                long t2 = System.currentTimeMillis();
-                print("Soy " + i + " y he terminado en : " + ((t2 - t1)));
             } catch (RemoteException e) {
                 e.printStackTrace();
             }

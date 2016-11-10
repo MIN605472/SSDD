@@ -88,13 +88,12 @@ public class WorkerServer implements Worker {
             throws RemoteException {
         if (max < min) {
             throw new IllegalArgumentException(
-                    "El parametro max no puede ser mayor que min");
+                    "El parametro max no puede ser menor que min");
         }
         if (min < 0) {
             throw new IllegalArgumentException(
                     "El parmetro min ha de ser positiovo");
         }
-        long t1 = System.nanoTime();
         boolean criba[] = new boolean[max + 1];
         criba[0] = true;
         criba[1] = true;
@@ -116,13 +115,6 @@ public class WorkerServer implements Worker {
                 listaConPrimos.add(i);
             }
         }
-        long t2 = System.nanoTime();
-        System.err.println(t2 - t1);
         return listaConPrimos;
     }
-
-    public static synchronized void print(String str) {
-        System.err.println(str);
-    }
-
 }
