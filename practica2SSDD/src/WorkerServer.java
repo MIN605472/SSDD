@@ -24,14 +24,16 @@ public class WorkerServer implements Worker {
 
     private static String dir = "";
 
-    public static void main(String[] args) throws RemoteException {
-        if (args.length > 1)
+    public static void main(String[] args) {
+        if (args.length > 1) {
             throw new IllegalArgumentException(
                     "El parametro es [IP_registro]");
-        if (args.length == 1)
+        }
+        if (args.length == 1) {
             dir = args[0];
-        else
+        } else {
             dir = "localhost";
+        }
 
         try {
             System.setProperty("java.rmi.server.hostname", dir);

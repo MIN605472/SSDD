@@ -17,8 +17,9 @@ import java.rmi.registry.Registry;
 import java.util.ArrayList;
 
 /**
- * Clase que representa un cliente que pide al objeto remoto WorkerFactory otros
- * objetos remotos, Worker, que calculan numeros primos en un intervalo dado
+ * Clase que representa un cliente que pide al objeto remoto WorkerFactory
+ * otros objetos remotos, Worker, que calculan numeros primos en un intervalo
+ * dado
  *
  */
 public class Cliente {
@@ -31,13 +32,15 @@ public class Cliente {
     }
 
     public static void main(String[] args) {
-        if (args.length > 4 || args.length < 3)
+        if (args.length > 4 || args.length < 3) {
             throw new IllegalArgumentException(
                     "Los parametros son min max n [IP_registro]");
-        if (args.length == 3)
+        }
+        if (args.length == 3) {
             dir = "localhost";
-        else
+        } else {
             dir = args[3];
+        }
 
         int min = Integer.parseInt(args[0]);
         int max = Integer.parseInt(args[1]);
@@ -124,7 +127,9 @@ public class Cliente {
      */
     private static class ThreadCalculo implements Runnable {
 
-        private int min, max, i;
+        private int min;
+        private int max;
+        private int i;
         private Worker worker;
 
         public ThreadCalculo(Worker worker, int min, int max, int i) {
