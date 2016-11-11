@@ -44,7 +44,7 @@ public class Cliente {
             dir = args[3];
         }
 
-        Thread[] t;
+        ArrayList<Thread> t = new ArrayList<>();
 
         try {
             int min = Integer.parseInt(args[0]);
@@ -57,37 +57,29 @@ public class Cliente {
             if (workers == null) {
                 System.err.println("No hay tantos workers como ha pedido");
             } else {
+                global = new ConcurrentHashMap<>();
                 int q = (max - min) / n;
-                int r = (max - min) % n;
-                if (r != 0) {
-                    t = new Thread[n + 1];
-                    global = new ConcurrentHashMap<>(n + 1);
-                } else {
-                    t = new Thread[n];
-                    global = new ConcurrentHashMap<>(n);
+                int pos = 0;
+                for (; min + q < max; min += q) {
+                    t.add(new Thread(new ThreadCalculo(workers.get(pos % n),
+                            min, min + q - 1, pos)));
+                    pos++;
 
                 }
-                for (int i = 0; i < n; i++) {
-                    t[i] = new Thread(new ThreadCalculo(workers.get(i),
-                            min + q * i, min + q * i + q, i));
-                }
-                if (r != 0) {
-                    t[n] = new Thread(new ThreadCalculo(workers.get(0),
-                            max - r, max, n));
+                t.add(new Thread(new ThreadCalculo(workers.get(pos % n), min,
+                        max, pos)));
+
+                for (Thread thread : t) {
+                    thread.start();
                 }
 
-                for (int i = 0; i < t.length; i++) {
-                    t[i].start();
-                }
-
-                for (int i = 0; i < t.length; i++) {
+                for (Thread thread : t) {
                     try {
-                        t[i].join();
+                        thread.join();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-
                 mostrarPrimos(global);
             }
 

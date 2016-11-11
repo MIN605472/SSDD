@@ -70,9 +70,15 @@ public class WorkerFactoryServer implements WorkerFactory {
     }
 
     public ArrayList<Worker> dameWorkers(int n) throws RemoteException {
+        if (n <= 0) {
+            throw new IllegalArgumentException(
+                    "El numero de Workers que se pide ha de ser mayor que 0");
+        }
+
         List<String> listaNombresWorkers = getWorkersNames(registry.list());
-        if (listaNombresWorkers.size() < n)
+        if (listaNombresWorkers.size() < n) {
             return null;
+        }
 
         ArrayList<Worker> workers = new ArrayList<>();
         Random ran = new Random();
