@@ -1,3 +1,10 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Knight.java
+* TIEMPO: 5 horas
+* DESCRIPCI’ON: Este fichero contiene la clase Caballero, de la aplicación implementada
+*/
 package ssdd.app;
 
 import java.io.FileNotFoundException;

@@ -1,3 +1,10 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: MailBox.java
+* TIEMPO: 5 horas
+* DESCRIPCIÓN: Este fichero contiene la clase Mailbox que representa un buzón de mensajes
+*/
 package ssdd.ms;
 
 import java.io.IOException;

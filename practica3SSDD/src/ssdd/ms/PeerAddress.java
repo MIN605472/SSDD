@@ -1,3 +1,10 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: PeerAddress.java
+* TIEMPO: 5 horas
+* DESCRIPCI’ON: Este fichero contiene una clase que representa una dirección
+*/
 package ssdd.ms;
 
 import java.io.IOException;

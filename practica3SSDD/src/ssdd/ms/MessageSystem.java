@@ -1,3 +1,11 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: MessageSystem.java
+* TIEMPO: 5 horas
+* DESCRIPCIÓN: Este fichero contiene la clase MessageSystem que permite recibir
+* y enviar mensajes a los contactos especificados en el fichero peers
+*/
 package ssdd.ms;
 
 import java.io.BufferedReader;

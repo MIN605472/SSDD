@@ -1,3 +1,11 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Envelope.java
+* TIEMPO: 5 horas
+* DESCRIPCI’ON: Este fichero contiene la clase Envelope que representa un sobre,
+* indicando remitente y destinatario
+*/
 package ssdd.ms;
 
 import java.io.Serializable;

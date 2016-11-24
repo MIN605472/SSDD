@@ -1,3 +1,11 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Carta.java
+* TIEMPO: 5 horas
+* DESCRIPCI’ON: Este fichero contiene la clase Carta, que representa una carta
+* nos permite poner el remitente y el destinatario en formato de texto.
+*/
 package ssdd.app;
 
 import java.io.Serializable;
