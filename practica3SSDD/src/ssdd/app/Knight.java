@@ -6,7 +6,6 @@ import ssdd.ms.Envelope;
 import ssdd.ms.MessageSystem;
 
 public class Knight {
-	private static final String nombre = nombreRandom();
 
 	public static void main(String[] args) {
 		boolean debug = false;
@@ -40,11 +39,9 @@ public class Knight {
 					+ ", reto al pretendiente a un duelo.");
 			ms.send(1, letter);
 		}
+		//recibe respuesta reto
+		env = ms.receive();
 
 	}
 
-	private static String nombreRandom() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }
