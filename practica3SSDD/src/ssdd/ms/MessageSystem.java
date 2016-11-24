@@ -66,6 +66,11 @@ public class MessageSystem {
             e.printStackTrace();
         }
     }
+    
+    public int getNumAdd(){
+		return addresses.size();
+    	
+    }
 
     private int loadPeerAddresses(String networkFile)
             throws FileNotFoundException {

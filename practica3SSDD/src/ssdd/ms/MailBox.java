@@ -7,16 +7,18 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class MailBox extends Thread {
 
     private int port;
     private ServerSocket socket;
-    private Queue<Envelope> queue;
+    private BlockingQueue<Envelope> queue;
 
     public MailBox(int p) {
         port = p;
-        queue = new LinkedList<>();
+        queue = new LinkedBlockingQueue<>();
     }
 
     // Servidor secuencial
@@ -28,9 +30,10 @@ public class MailBox extends Thread {
                 ObjectInputStream objectIS = new ObjectInputStream(
                         s.getInputStream());
                 queue.add((Envelope) objectIS.readObject());
+                s.close();
             }
         } catch (SocketException e) {
-            System.err.println("Cerrando buzÃ³n.");
+            System.err.println("Cerrando buzón.");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -39,7 +42,14 @@ public class MailBox extends Thread {
     }
 
     public Envelope getNextMessage() {
-        return queue.remove();
+    	Envelope env = null;
+        try {
+			env= queue.take();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        return env;
     }
 
     public void closeMailbox() throws IOException {
