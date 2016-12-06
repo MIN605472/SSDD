@@ -13,7 +13,8 @@ public class Chat {
 
     public static void main(String[] args) {
         if (args.length != 2 && args.length != 3) {
-
+            throw new IllegalArgumentException(
+                    "Los parametros son incorrectos");
         }
         boolean debug = false;
         int src = 0;
