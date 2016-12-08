@@ -1,3 +1,12 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Chat.java
+* TIEMPO: 4 horas toda la practica
+* DESCRIPCIÓN: Este fichero contiene el metodo principal muestra el chat 
+* y pone en funcionamiento el sistema de mensajes
+*/
+
 package ssdd.chat;
 
 import java.awt.event.ActionEvent;
@@ -45,22 +54,13 @@ public class Chat {
             e1.printStackTrace();
         }
         TotalOrderMulticast totalOrderMulticast = new TotalOrderMulticast(ms);
+        totalOrderMulticast.start();
         ChatDialog dialog = new ChatDialog();
         dialog.setOnClickActionListener(new ActionListener() {
-
             @Override
             public void actionPerformed(ActionEvent e) {
-                Thread t = new Thread() {
-                    // TODO: mirar lo que ocurre cuando el usuario quiere
-                    // enviar por ejemplo un mensaje y el otro aun no se ha
-                    // enviado. A lo mejor con un cola de mensajes pendientes?
-                    public void run() {
-                        totalOrderMulticast.sendMulticast(
-                                new Payload(Payload.Type.USER, dialog.text()));
-                    }
-                };
-                t.start();
-
+                totalOrderMulticast.sendMulticast(
+                        new Payload(Payload.Type.USER, dialog.text()));
             }
         });
         while (true) {

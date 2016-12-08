@@ -1,3 +1,13 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Payload.java
+* TIEMPO: 4 horas toda la practica
+* DESCRIPCIÓN: Este fichero contiene la clase Payload que representa 
+* lo que va dentro de un sobre, los mensajes que los procesos se intercambian.
+* 
+*/
+
 package ssdd.ms;
 
 import java.io.Serializable;

@@ -14,6 +14,7 @@ public class SendingUser1 {
     public static void main(String args[]) throws FileNotFoundException {
         MessageSystem ms = new MessageSystem(src, file, true);
         TotalOrderMulticast mc = new TotalOrderMulticast(ms);
+        mc.start();
         mc.sendMulticast(new Payload(Payload.Type.USER, msg));
         while (true) {
             mc.receiveMulticast();

@@ -3,7 +3,7 @@
 * NIA: 605472, 691812
 * FICHERO: MessageSystem.java
 * TIEMPO: 5 horas
-* DESCRIPCI�N: Este fichero contiene la clase MessageSystem que permite recibir
+* DESCRIPCIÓN: Este fichero contiene la clase MessageSystem que permite recibir
 * y enviar mensajes a los contactos especificados en el fichero peers
 */
 package ssdd.ms;
@@ -66,10 +66,8 @@ public class MessageSystem {
             System.err.println("[Ts: " + clock + "] Sending "
                     + message.toString() + " from " + pid + " to all");
         }
-        Payload pa = (Payload) message;
         for (int i = 0; i < addresses.size(); i++) {
-            if (pa.getType() == Payload.Type.USER
-                    || (pa.getType() != Payload.Type.USER && i != pid - 1)) {
+            if (i != pid - 1) {
                 PeerAddress p = addresses.get(i);
                 Socket socket = null;
                 try {

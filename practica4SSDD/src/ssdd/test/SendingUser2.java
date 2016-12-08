@@ -15,6 +15,7 @@ public class SendingUser2 {
         MessageSystem ms = new MessageSystem(src, file, true);
         TotalOrderMulticast mc = new TotalOrderMulticast(ms);
         mc.sendMulticast(new Payload(Payload.Type.USER, msg));
+        mc.start();
         while (true) {
             mc.receiveMulticast();
         }

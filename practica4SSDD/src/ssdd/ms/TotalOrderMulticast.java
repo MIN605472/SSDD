@@ -1,27 +1,60 @@
+/*
+* AUTOR: Marius Nemtanu, Pablo Piedrafita
+* NIA: 605472, 691812
+* FICHERO: Chat.java
+* TIEMPO: 4 horas toda la practica
+* DESCRIPCIÓN: Este fichero contiene la clase TotalOrderMulticast que
+* implementa el algoritmo de Ricart y Agrawala usado para mandar mensajes
+* multicast. Esta clase es un thread que envia todo el rato lo que haya en la
+* mensajes que mantiene internamente.
+*/
+
 package ssdd.ms;
 
 import java.io.Serializable;
-import java.util.Arrays;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
-public class TotalOrderMulticast {
+public class TotalOrderMulticast extends Thread {
     private MessageSystem msystem;
-    private Serializable message;
+    // Usado para tratar de enviar solo un mensaje a la vez
+    private Semaphore mutex;
+    private BlockingQueue<Serializable> messagesToSend;
+    private Serializable currentMessage;
     private boolean requestingCS;
     private boolean replyDeferred[];
-    private int ackNotRecieved;
+    private int numAcksNotReceived;
 
     public TotalOrderMulticast(MessageSystem ms) {
         msystem = ms;
+        mutex = new Semaphore(1);
         requestingCS = false;
         replyDeferred = new boolean[msystem.getNumAdd()];
-        Arrays.fill(replyDeferred, false);
-        ackNotRecieved = msystem.getNumAdd() - 1;
+        numAcksNotReceived = msystem.getNumAdd() - 1;
+        messagesToSend = new LinkedBlockingQueue<>();
     }
-    
+
     public void sendMulticast(Serializable message) {
-        this.message = message;
-        requestingCS = true;
-        msystem.sendMulticast(new Payload(Payload.Type.REQ));
+        try {
+            messagesToSend.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                mutex.acquire();
+                currentMessage = messagesToSend.take();
+                requestingCS = true;
+                msystem.sendMulticast(new Payload(Payload.Type.REQ));
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public Envelope receiveMulticast() {
@@ -32,9 +65,9 @@ public class TotalOrderMulticast {
                 switch (p.getType()) {
                 case ACK:
                     msystem.setClockAfterReceiving(e);
-                    if (--ackNotRecieved == 0) {
-                        ackNotRecieved = msystem.getNumAdd() - 1;
-                        msystem.sendMulticast(message);
+                    if (--numAcksNotReceived == 0) {
+                        numAcksNotReceived = msystem.getNumAdd() - 1;
+                        msystem.sendMulticast(currentMessage);
                         requestingCS = false;
                         for (int i = 0; i < replyDeferred.length; i++) {
                             if (replyDeferred[i]) {
@@ -43,6 +76,9 @@ public class TotalOrderMulticast {
                                 replyDeferred[i] = false;
                             }
                         }
+                        mutex.release();
+                        return new Envelope(msystem.getPid(), msystem.getPid(),
+                                currentMessage, msystem.getClock());
                     }
                     break;
                 case REQ:
