@@ -17,7 +17,7 @@ defmodule NodoRemoto do
                     "--erl  \'-kernel inet_dist_listen_min 32000\'",
                     "--erl  \'-kernel inet_dist_listen_max 32009\'",
                     "--detached --no-halt #{fichero_programa_cargar}"])
-
+        #System.cmd("elixir", ["--name", "#{nombre}@#{host}", "--cookie", "palabrasecreta" ,"--erl", "'-kernel inet_dist_listen_min 32000'", "--erl", "'-kernel inet_dist_listen_max 32009'", "--detached", "--no-halt", "#{fichero_programa_cargar}"])
         nodo = String.to_atom(nombre <> "@" <> host) 
         comprobar_funciona(nodo, modulo)
         :io.format("Tiempo puesta en marcha de nodo ~p : ~p~n",
