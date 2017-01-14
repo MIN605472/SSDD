@@ -2,7 +2,7 @@ Code.require_file("#{__DIR__}/servidor_gv.exs")
 
 defmodule ClienteGV do
     
-    @tiempo_espera_de_respuesta 500
+    @tiempo_espera_de_respuesta 50
     
 
     @doc """

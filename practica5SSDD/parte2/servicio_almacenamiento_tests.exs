@@ -64,7 +64,7 @@ defmodule  ServicioAlmacenamientoTest do
 
         # Espera configuracion y relacion entre nodos
         Process.sleep(200)
-
+        
         IO.puts("Test: Comprobar escritura con primario, copia y espera ...")
 
         # Comprobar primeros nodos primario y copia

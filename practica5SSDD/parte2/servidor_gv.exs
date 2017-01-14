@@ -55,7 +55,7 @@ defmodule ServidorGV do
                     Agent.update(:lista_latidos, aux)
                     nueva_vista = procesa_latido(nodo_origen, n_vista)
                     IO.inspect("Enviamos mensaje:")
-                    IO.inspect(n_vista)
+                    IO.inspect(nueva_vista)
                     IO.inspect(nodo_origen)
                     send({:servidor_sa, nodo_origen}, {:vista_tentativa, nueva_vista, false})
                 end

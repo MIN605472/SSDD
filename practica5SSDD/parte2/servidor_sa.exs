@@ -62,16 +62,18 @@ defmodule ServidorSA do
 
     defp bucle_recepcion_principal() do
         receive do
-
+            {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
             # Solicitudes de lectura y escritura de clientes del servicio almace.
             {:lee, clave, nodo_origen}  ->  
                 send(nodo_origen, {:resultado, lee_diccionario(clave)})
 
             {:escribe_generico, {clave, valor, true}, nodo_origen} -> 
                 exito = escribe_copia(clave, hash(valor))
+                
                 if exito do
-                    escribe_diccionario(clave, hash(valor))
-                    send(nodo_origen,{:resultado, valor})
+                    if (copia == Node.self() and nodo_origen == primario) or primario == Node.self()
+                        escribe_diccionario(clave, hash(valor))
+                        send(nodo_origen,{:resultado, valor})
                 else
                     send(nodo_origen, :fallo)
                 end
