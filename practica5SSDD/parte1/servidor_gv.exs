@@ -36,14 +36,13 @@ defmodule ServidorGV do
         Agent.start_link(fn -> vistaTentativa end, name: :vTentativa)
         Agent.start_link(fn -> vistaTentativa end, name: :vValida)
         Agent.start_link(fn -> Map.new() end, name: :lista_latidos)
-        Agent.start_link(fn -> Map.new() end, name: :mon_caidos)
 
         bucle_recepcion()
     end
 
     def init_monitor(pid_principal) do
         send(pid_principal, :procesa_situacion_servidores)
-        Process.sleep(@periodo_latido)
+        Process.sleep(@periodo_latido * @latidos_fallidos)
         init_monitor(pid_principal)
     end
 
@@ -52,9 +51,9 @@ defmodule ServidorGV do
         receive do
             {:latido, nodo_origen, n_vista} ->
                 if not sistema_caido?() do
-                    nueva_vista = procesa_latido(nodo_origen, n_vista)
-                    aux = fn map -> Map.put(map, nodo_origen, n_vista) end
+                    aux = fn map -> Map.update(map, nodo_origen, 1, fn x -> x + 1 end) end
                     Agent.update(:lista_latidos, aux)
+                    nueva_vista = procesa_latido(nodo_origen, n_vista)
                     send({:cliente_gv, nodo_origen}, {:vista_tentativa, nueva_vista, false})
                 end
 
@@ -69,49 +68,25 @@ defmodule ServidorGV do
         bucle_recepcion()
     end
 
-    # Acutaliza la estructura que mantenemos para saber si se ha caido primario o copia
-    defp actualizar_mon_caidos() do
-        latidos = Agent.get(:lista_latidos, fn l -> l end)
-        vistaTentativa = Agent.get(:vTentativa, fn vista -> vista end)
-        if vistaTentativa.primario != :undefined do
-            if Map.get(latidos, vistaTentativa.primario) == nil do
-                Agent.update(:mon_caidos, fn map -> Map.update(map, :primario, 3, fn v -> v - 1 end) end) 
-            else
-                Agent.update(:mon_caidos, fn map -> Map.put(map, :primario, @latidos_fallidos) end)
-            end
-        end
-
-        vistaTentativa = Agent.get(:vTentativa, fn vista -> vista end)
-        if vistaTentativa.copia != :undefined do
-            if Map.get(latidos, vistaTentativa.copia) == nil do
-                Agent.update(:mon_caidos, fn map -> Map.update(map, :copia, 3, fn v -> v - 1 end) end) 
-            else
-                Agent.update(:mon_caidos, fn map -> Map.put(map, :copia, @latidos_fallidos) end)
-            end
-        end
-
-    end
-
     defp copia_caido?() do
         copia = Agent.get(:vTentativa, fn vista -> vista.copia end)
-        mon_caidos = Agent.get(:mon_caidos, fn x -> x end)
-        num = Map.get(mon_caidos, :copia)
-        copia != :undefined and num == 0
+        latidos = Agent.get(:lista_latidos, fn x -> x end)
+        num = Map.get(latidos, copia)
+        copia != :undefined and num == nil
     end
     
     defp primario_caido?() do
         primario = Agent.get(:vTentativa, fn vista -> vista.primario end)
-        mon_caidos = Agent.get(:mon_caidos, fn x -> x end)
-        num = Map.get(mon_caidos, :primario)
-        primario != :undefined and num == 0
+        latidos = Agent.get(:lista_latidos, fn x -> x end)
+        num = Map.get(latidos, primario)
+        primario != :undefined and num == nil
     end
 
-    defp actualizar_tentativa_si_copia_caido do
-        lista = Agent.get(:lista_latidos, fn l -> l end)
+    defp actualizar_tentativa_si_copia_caido(nodo) do
         if copia_caido?() do
             aux = fn vista ->
                 %{vista  | 
-                    copia: elegir_nodo(Map.to_list(lista), vista.primario),
+                    copia: nodo,
                     num_vista: vista.num_vista + 1
                 }
             end
@@ -119,13 +94,12 @@ defmodule ServidorGV do
         end
     end
 
-    defp actualizar_tentativa_si_primario_caido do
-        lista = Agent.get(:lista_latidos, fn l -> l end)
+    defp actualizar_tentativa_si_primario_caido(nodo) do
         if primario_caido?() do
             aux = fn vista ->
                 %{vista |
                     primario: vista.copia,
-                    copia: elegir_nodo(Map.to_list(lista), vista.copia),
+                    copia: nodo,
                     num_vista: vista.num_vista + 1
                 }
             end
@@ -134,72 +108,59 @@ defmodule ServidorGV do
     end
 
 
-    defp actualizar_tentativa_si_no_hay_primario do
+    defp actualizar_tentativa_si_no_hay_primario_o_copia(nodo) do
         vistaTentativa = Agent.get(:vTentativa, fn vista -> vista end)
-        lista = Agent.get(:lista_latidos, fn l -> l end)
-        if vistaTentativa.primario == :undefined do
-            nuevo_primario = elegir_nodo(Map.to_list(lista), vistaTentativa.copia)
-            if nuevo_primario != :undefined do
+        cond do
+            vistaTentativa.primario == :undefined and nodo != vistaTentativa.copia ->
                 aux_vista = fn vista -> 
                     %{vista |
-                        primario: nuevo_primario,
+                        primario: nodo,
                         num_vista: vista.num_vista + 1
                     }
                 end
-                aux_mon_caidos = fn map ->
-                    Map.put(map, :primario, @latidos_fallidos)  
-                end
-                Agent.update(:mon_caidos, aux_mon_caidos)
                 Agent.update(:vTentativa, aux_vista)
-            end
-        end
-    end
 
-    defp actualizar_tentativa_si_no_hay_copia do
-        vistaTentativa = Agent.get(:vTentativa, fn vista -> vista end)
-        lista = Agent.get(:lista_latidos, fn l -> l end)
-        if vistaTentativa.copia == :undefined do
-            nuevo_copia = elegir_nodo(Map.to_list(lista), vistaTentativa.primario)
-            if nuevo_copia != :undefined do
+            vistaTentativa.copia == :undefined and nodo != vistaTentativa.primario->
                 aux_vista = fn vista -> 
                     %{vista |
-                        copia: nuevo_copia,
+                        copia: nodo,
                         num_vista: vista.num_vista + 1
                     }
                 end
-
-                aux_mon_caidos = fn map ->
-                    Map.put(map, :primario, @latidos_fallidos)  
-                end
-
-                Agent.update(:mon_caidos, aux_mon_caidos)
                 Agent.update(:vTentativa, aux_vista)
-            end
+
+            true ->
+                :nada
         end
     end
 
-    ##SI CAE NODO, PONER EN ESTRUCTURA A :undefined
+    defp actualizar_tentativa_si_no_hay_copia(nodo) do
+        vistaTentativa = Agent.get(:vTentativa, fn vista -> vista end)
+        if vistaTentativa.copia == :undefined and nodo != vistaTentativa.primario do
+            aux_vista = fn vista -> 
+                %{vista |
+                    copia: nodo,
+                    num_vista: vista.num_vista + 1
+                }
+            end
+            Agent.update(:vTentativa, aux_vista)
+        end
+    end
+
     defp procesar_situacion_servidores() do
         vistaValida = Agent.get(:vValida, fn vista -> vista end)
         cond do
             # Sistema caido
             sistema_caido?() ->
-                IO.inspect "SISTEMA CAIDO"
+                IO.inspect "SISTEMA CAIDO!"
             # Funcionamiento inicial
             vistaValida.num_vista == 0 ->
-                actualizar_mon_caidos()
-                actualizar_valida_si_confirma()
-                actualizar_tentativa_si_copia_caido()
-                actualizar_tentativa_si_primario_caido()
-                actualizar_tentativa_si_no_hay_primario()
-                actualizar_tentativa_si_no_hay_copia()
+                actualizar_tentativa_si_copia_caido(:undefined)
+                actualizar_tentativa_si_primario_caido(:undefined)
             # Funcionamiento normal
             vistaValida.num_vista != 0 ->                
-                actualizar_mon_caidos()
-                actualizar_valida_si_confirma()
-                actualizar_tentativa_si_copia_caido()
-                actualizar_tentativa_si_primario_caido()
-                actualizar_tentativa_si_no_hay_copia()
+                actualizar_tentativa_si_copia_caido(:undefined)
+                actualizar_tentativa_si_primario_caido(:undefined)
         end
         Agent.update(:lista_latidos, fn _ -> Map.new end)
     end
@@ -213,28 +174,58 @@ defmodule ServidorGV do
             primario_tentativa != valida.copia
     end
 
-    defp elegir_nodo([], _) do
-        :undefined
-    end
-
-    defp elegir_nodo([{nodo, _} | t], valor) do
-        if nodo != valor do
-            nodo
-        else
-            elegir_nodo(t, valor)
+    defp actualizar_valida_si_confirma(nodo, num_vista) do
+        tentativa = Agent.get(:vTentativa, fn v -> v end)
+        if nodo == tentativa.primario and tentativa.num_vista == num_vista do
+            Agent.update(:vValida, fn _ -> tentativa end)
         end
     end
 
-    defp actualizar_valida_si_confirma() do
-        lista = Agent.get(:lista_latidos, fn l -> l end)
-        vistaTentativa = Agent.get(:vTentativa, fn v -> v end)
-        valor = Map.get(lista, vistaTentativa.primario)
-        if valor != nil and valor == vistaTentativa.num_vista do
-            Agent.update(:vValida, fn _ -> vistaTentativa end)
+    defp actualizar_tentativa_si_caen_rapidamente(nodo) do
+        tentativa = Agent.get(:vTentativa, fn vista -> vista end)
+        primario_caido = tentativa.primario != :undefined and nodo == tentativa.primario
+        copia_caido = tentativa.copia != :undefined and nodo == tentativa.copia
+        if primario_caido or copia_caido do
+            aux = fn vista ->
+                %{vista |
+                    num_vista: vista.num_vista + 1
+                }   
+            end
+            Agent.update(:vTentativa, aux)
         end
     end
 
-    defp procesa_latido(_, _) do
+    defp procesa_latido(nodo, 0) do
+        vista_valida = Agent.get(:vValida, fn vista -> vista end)
+        cond do
+            sistema_caido?() ->
+                :nada
+            vista_valida.num_vista == 0 ->
+                actualizar_tentativa_si_caen_rapidamente(nodo)
+                actualizar_tentativa_si_no_hay_primario_o_copia(nodo)
+            vista_valida.num_vista != 0 ->
+                actualizar_tentativa_si_caen_rapidamente(nodo)
+                actualizar_tentativa_si_no_hay_copia(nodo)
+        end
+        Agent.get(:vTentativa, fn vista -> vista end)
+    end
+
+    defp procesa_latido(_, -1) do
+        Agent.get(:vTentativa, fn vista -> vista end)
+    end
+
+    defp procesa_latido(nodo, num_vista) do
+        vista_valida = Agent.get(:vValida, fn vista -> vista end)
+        cond do
+            sistema_caido?() ->
+                :nada
+            vista_valida.num_vista == 0 ->
+                actualizar_valida_si_confirma(nodo, num_vista)
+                actualizar_tentativa_si_no_hay_primario_o_copia(nodo)
+            vista_valida.num_vista != 0 ->
+                actualizar_valida_si_confirma(nodo, num_vista)
+                actualizar_tentativa_si_no_hay_copia(nodo)
+        end
         Agent.get(:vTentativa, fn vista -> vista end)
     end
 

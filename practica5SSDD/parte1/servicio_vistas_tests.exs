@@ -120,21 +120,13 @@ defmodule  GestorVistasTest do
     # 5, c1, c3
     test "3er servidor en espera (C3) se convierte en copia si primario falla", %{c1: c1, c2: c2, c3: c3} do
         IO.puts("Test: 3er servidor en espera (C3) se convierete en copia si primario falla")
-        {vista, _} = ClienteGV.latido(c3, 3)
-        c3_copia_si_primario_falla(c1, c3, @latidos_fallidos * 2)
-        comprobar_tentativa(c2, c1, c3, vista.num_vista + 1)
-
-        #validar vista
-        #ClienteGV.latido(c1, vista.num_vista + 1)
-        #comprobar_valida(c3, c1, c3, vista.num_vista + 1)
-
+        {vista, _} = ClienteGV.latido(c1, 3)
+        c3_copia_si_primario_falla(c1, c3, @latidos_fallidos * 3)
+        comprobar_tentativa(c2, c1, c3, vista.num_vista + 2)
         IO.puts(" ... Superado")
     end
 
-    defp c3_copia_si_primario_falla(_, _, 0) do
-        :fin
-    end
-
+    defp c3_copia_si_primario_falla(_, _, 0) do :fin end
     defp c3_copia_si_primario_falla(c1, c3, x) do
         ClienteGV.latido(c1, 3)
         {vista, _} = ClienteGV.latido(c3, 0)
@@ -172,11 +164,11 @@ defmodule  GestorVistasTest do
     ## Test 8 : Si anteriores servidores caen (Primario  y Copia),
     ##       un nuevo servidor sin inicializar no puede convertirse en primario.
     # sin_inicializar_no(C1, C2, C3),
-    test "Si primario y copia caen, un nuevo servidor sin inicializar no pudee convertirse en primario", %{c1: c1, c2: c2, c3: c3} do
+    test "Si primario y copia caen, un nuevo servidor sin inicializar no pudee convertirse en primario", %{c3: c3} do
         IO.puts("Test: Si primario y copia caen, un nuevo servidor sin inicializar no pudee convertirse en primario")
         # Primario y copia no mandan latidos
         Process.sleep(@intervalo_latido * @latidos_fallidos * 2)
-        {vista, is_ok?} = ClienteGV.latido(c3, 0)
+        {_, is_ok?} = ClienteGV.latido(c3, 0)
         assert is_ok? == false
         comprobar_tentativa(c3, :undefined, :undefined, 0)
         IO.puts( "... Superado" )
@@ -236,7 +228,6 @@ defmodule  GestorVistasTest do
     defp comprobar_tentativa(nodo_cliente, nodo_primario, nodo_copia, n_vista) do
         # Solo interesa vista tentativa
         {vista, _} = ClienteGV.latido(nodo_cliente, -1) 
-
         comprobar(nodo_primario, nodo_copia, n_vista, vista)        
     end
 
