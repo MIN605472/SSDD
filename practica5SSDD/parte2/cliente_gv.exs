@@ -2,7 +2,7 @@ Code.require_file("#{__DIR__}/servidor_gv.exs")
 
 defmodule ClienteGV do
     
-    @tiempo_espera_de_respuesta 10
+    @tiempo_espera_de_respuesta 500
     
 
     @doc """
@@ -14,9 +14,11 @@ defmodule ClienteGV do
 
         receive do   # esperar respuesta del ping
             {:vista_tentativa, vista, is_ok?} ->
+                IO.inspect(vista)
                 {vista, is_ok?}
 
         after @tiempo_espera_de_respuesta ->
+            IO.inspect("fallo")
             {ServidorGV.vista_inicial(), false}
         end
     end

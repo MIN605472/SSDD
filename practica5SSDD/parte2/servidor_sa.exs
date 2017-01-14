@@ -33,14 +33,14 @@ defmodule ServidorSA do
 
 
     #------------------- Funciones privadas -----------------------------
-    defp envio_latidos(nodo_servidor_gv, num_vista) do
-        {vista, is_ok} = cliente_gv.latido(nodo_servidor_gv, num_vista)
+    def envio_latidos(nodo_servidor_gv, num_vista) do
+        {vista, _} = ClienteGV.latido(nodo_servidor_gv, num_vista)
         Process.sleep(@intervalo_latido)
 
         #Distinción de casos: primario, copia, espera...
-        vista.primario == Node.self()
+        #vista.primario == Node.self()
         ##
-
+        IO.inspect(vista.num_vista)
         envio_latidos(nodo_servidor_gv, vista.num_vista)
     end
 
@@ -50,10 +50,10 @@ defmodule ServidorSA do
 
 
     #------------- INICIALIZACION ..........
-        pid = spawn fn -> envio_latidos(nodo_servidor_gv, 0) end
         Agent.start_link(fn -> Map.new() end, name: :diccionario)
         #vistaTentativa = %ServidorGV{num_vista: -1, primario: :undefined, copia: :undefined}
         Agent.start_link(fn -> :empty end, name: :vistaTentativa)
+        pid = spawn fn -> envio_latidos(nodo_servidor_gv, 0) end
 
          # Poner estado inicial
         bucle_recepcion_principal() 
@@ -65,7 +65,7 @@ defmodule ServidorSA do
 
             # Solicitudes de lectura y escritura de clientes del servicio almace.
             {:lee, clave, nodo_origen}  ->  
-                send(nodo_origen, {:resultado, lee_diccionario(clave,nodo_origen)})
+                send(nodo_origen, {:resultado, lee_diccionario(clave)})
 
             {:escribe_generico, {clave, valor, true}, nodo_origen} -> 
                 exito = escribe_copia(clave, hash(valor))
@@ -115,7 +115,6 @@ defmodule ServidorSA do
         Agent.get(:diccionario, fn map -> Map.get(map, clave, "") end)        
     end
 
-    @spec escribe_diccionario(String.t, String.t)
     defp escribe_diccionario(clave, valor) do
         claves = Agent.get(:diccionario, fn x -> x end)
         nuevas_claves = Map.update(claves, clave, valor, fn _ -> valor end)

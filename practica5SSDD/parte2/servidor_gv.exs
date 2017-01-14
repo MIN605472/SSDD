@@ -54,7 +54,10 @@ defmodule ServidorGV do
                     aux = fn map -> Map.update(map, nodo_origen, 1, fn x -> x + 1 end) end
                     Agent.update(:lista_latidos, aux)
                     nueva_vista = procesa_latido(nodo_origen, n_vista)
-                    send({:cliente_gv, nodo_origen}, {:vista_tentativa, nueva_vista, false})
+                    IO.inspect("Enviamos mensaje:")
+                    IO.inspect(n_vista)
+                    IO.inspect(nodo_origen)
+                    send({:servidor_sa, nodo_origen}, {:vista_tentativa, nueva_vista, false})
                 end
 
             {:obten_vista, pid} ->
