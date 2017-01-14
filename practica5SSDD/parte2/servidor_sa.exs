@@ -40,8 +40,30 @@ defmodule ServidorSA do
         #Distinción de casos: primario, copia, espera...
         #vista.primario == Node.self()
         ##
+
+        vista_guardada = Agent.get(:vistaTentativa, fn x -> x)
+
+        if vista_guardada.copia != vista.copia do
+            realizar_copia(vista.copia)
+        end
+
+        if vista.primario == Node.self() and not copiado do
+            realizar_copia(vista.copia)
+        end
+
+
         IO.inspect(vista.num_vista)
-        envio_latidos(nodo_servidor_gv, vista.num_vista)
+        if vista.num_vista == 1 do
+            Agent.update(:vistaTentativa, fn _ -> vista end)
+            envio_latidos(nodo_servidor_gv, -1)
+        else
+            if(#copiado) do
+                envio_latidos(nodo_servidor_gv, vista.num_vista)
+            else
+                envio_latidos(nodo_servidor_gv, vista.num_vista-1)
+            end
+        end
+
     end
 
     def init_sa(nodo_servidor_gv) do
@@ -67,27 +89,21 @@ defmodule ServidorSA do
             {:lee, clave, nodo_origen}  ->  
                 send(nodo_origen, {:resultado, lee_diccionario(clave)})
 
-            {:escribe_generico, {clave, valor, true}, nodo_origen} -> 
-                exito = escribe_copia(clave, hash(valor))
-                
+            {:escribe_generico, {clave, valor, hash?}, nodo_origen} ->
+                if hash? do
+                    valor = hash(valor)
+                end 
+                exito = escribe_copia(clave, valor)                
                 if exito do
-                    if (copia == Node.self() and nodo_origen == primario) or primario == Node.self()
-                        escribe_diccionario(clave, hash(valor))
+                    if (copia == Node.self() and nodo_origen == primario) or primario == Node.self() do
+                        escribe_diccionario(clave, valor)
                         send(nodo_origen,{:resultado, valor})
+                    else
+                        send(nodo_origen, {:resultado, :no_soy_primario_valido})
+                    end
                 else
                     send(nodo_origen, :fallo)
                 end
-
-            {:escribe_generico, {clave, valor, false}, nodo_origen} -> 
-                exito = escribe_copia(clave, valor)
-                if exito do
-                    escribe_diccionario(clave, valor)
-                    send(nodo_origen,{:resultado, valor})
-                else
-                    send(nodo_origen, :fallo)
-                end
-
-
                 # ----------------- vuestro códio
 
 
