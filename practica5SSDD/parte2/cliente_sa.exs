@@ -1,6 +1,8 @@
 Code.require_file("#{__DIR__}/cliente_gv.exs")
 
 defmodule ClienteSA do
+
+    @intervalo_latido 50
     
     @doc """
         Poner en marcha un nodo cliente del servicio de almacenamiento
@@ -104,7 +106,7 @@ defmodule ClienteSA do
     
         case p do
             :undefined ->  # esperamos un rato si aparece primario
-                Process.sleep(ServidorGV.intervalo_latido())
+                Process.sleep(@intervalo_latido)
                 realizar_operacion(op, param, servidor_gv)
 
             nodo_primario ->   # enviar operación a ejecutar a primario

@@ -1,8 +1,9 @@
+Code.require_file("#{__DIR__}/cliente_gv.exs")
 
 defmodule ServidorSA do
     
                 
-    defstruct   ....
+    defstruct [:num_vista, :primario, :copia] 
 
 
     @intervalo_latido 50
@@ -32,27 +33,57 @@ defmodule ServidorSA do
 
 
     #------------------- Funciones privadas -----------------------------
+    defp envio_latidos(nodo_servidor_gv, num_vista) do
+        {vista, is_ok} = cliente_gv.latido(nodo_servidor_gv, num_vista)
+        Process.sleep(@intervalo_latido)
+
+        #Distinción de casos: primario, copia, espera...
+        vista.primario == Node.self()
+        ##
+
+        envio_latidos(nodo_servidor_gv, vista.num_vista)
+    end
 
     def init_sa(nodo_servidor_gv) do
         Process.register(self(), :servidor_sa)
-        # Process.register(self(), :cliente_gv)
- 
+        # Process.register(self(), :cliente_gv)       
 
 
-    #------------- VUESTRO CODIGO DE INICIALIZACION AQUI..........
-
-
+    #------------- INICIALIZACION ..........
+        pid = spawn fn -> envio_latidos(nodo_servidor_gv, 0) end
+        Agent.start_link(fn -> Map.new() end, name: :diccionario)
+        #vistaTentativa = %ServidorGV{num_vista: -1, primario: :undefined, copia: :undefined}
+        Agent.start_link(fn -> :empty end, name: :vistaTentativa)
 
          # Poner estado inicial
-        bucle_recepcion_principal(???) 
+        bucle_recepcion_principal() 
     end
 
 
-    defp bucle_recepcion_principal(???) do
-        ??? = receive do
+    defp bucle_recepcion_principal() do
+        receive do
 
             # Solicitudes de lectura y escritura de clientes del servicio almace.
-            {op, param, nodo_origen}  ->
+            {:lee, clave, nodo_origen}  ->  
+                send(nodo_origen, {:resultado, lee_diccionario(clave,nodo_origen)})
+
+            {:escribe_generico, {clave, valor, true}, nodo_origen} -> 
+                exito = escribe_copia(clave, hash(valor))
+                if exito do
+                    escribe_diccionario(clave, hash(valor))
+                    send(nodo_origen,{:resultado, valor})
+                else
+                    send(nodo_origen, :fallo)
+                end
+
+            {:escribe_generico, {clave, valor, false}, nodo_origen} -> 
+                exito = escribe_copia(clave, valor)
+                if exito do
+                    escribe_diccionario(clave, valor)
+                    send(nodo_origen,{:resultado, valor})
+                else
+                    send(nodo_origen, :fallo)
+                end
 
 
                 # ----------------- vuestro códio
@@ -62,6 +93,32 @@ defmodule ServidorSA do
 
 
         end
-
-        bucle_recepcion_principal(???)
+        bucle_recepcion_principal()
     end
+
+    defp escribe_copia(clave, valor) do
+        {_, _, copia} = Agent.get(:vistaTentativa, fn x -> x end)
+        if copia != Node.self() do
+            send({:servidor_sa, copia}, 
+                {:escribe_generico, {clave, valor, false}, self()})
+            receive do
+                {:resultado, valor} -> true
+                otro -> false
+            end
+        else
+            true
+        end
+    end
+
+    @spec lee_diccionario(String.t) :: String.t
+    defp lee_diccionario(clave) do
+        Agent.get(:diccionario, fn map -> Map.get(map, clave, "") end)        
+    end
+
+    @spec escribe_diccionario(String.t, String.t)
+    defp escribe_diccionario(clave, valor) do
+        claves = Agent.get(:diccionario, fn x -> x end)
+        nuevas_claves = Map.update(claves, clave, valor, fn _ -> valor end)
+        Agent.update(:diccionario, fn _ -> nuevas_claves end)
+    end
+end
