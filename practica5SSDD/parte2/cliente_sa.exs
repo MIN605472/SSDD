@@ -122,7 +122,7 @@ defmodule ClienteSA do
 
                 # Sin resultado en tiempo establecido ?
                 # -> se vuelve a pedir operacion al primario en curso
-                after ServidorGV.intervalo_latido() ->
+                after @intervalo_latido ->
                     realizar_operacion(op, param, servidor_gv)
                 end
         end

@@ -14,7 +14,6 @@ defmodule ClienteGV do
 
         receive do   # esperar respuesta del ping
             {:vista_tentativa, vista, is_ok} ->
-                IO.inspect(vista)
                 {vista, is_ok}
 
         after @tiempo_espera_de_respuesta ->

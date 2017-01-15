@@ -47,7 +47,7 @@ defmodule  ServicioAlmacenamientoTest do
         IO.puts(" ... Superado")
     end
 
-    #@tag :no_ejecutar
+    @tag :no_ejecutar
     test "Algunas escrituras" do
         #:io.format "Pids de nodo MAESTRO ~p: principal = ~p~n", [node, self]
 
@@ -104,7 +104,7 @@ defmodule  ServicioAlmacenamientoTest do
         parar_nodos(mapa_nodos)
     end
 
-    @tag :no_ejecutar
+    #@tag :no_ejecutar
     test "Mismos valores concurrentes" do
         IO.puts("Test: Escrituras mismos valores clientes concurrentes ...")
 

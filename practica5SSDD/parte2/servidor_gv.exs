@@ -54,17 +54,11 @@ defmodule ServidorGV do
                     aux = fn map -> Map.update(map, nodo_origen, 1, fn x -> x + 1 end) end
                     Agent.update(:lista_latidos, aux)
                     nueva_vista = procesa_latido(nodo_origen, n_vista)
-                    #IO.inspect("Enviamos vista_tentativa:")
-                    #IO.inspect(nueva_vista)
-                    #IO.inspect(nodo_origen)
                     send({:servidor_sa, nodo_origen}, {:vista_tentativa, nueva_vista, false})
                 end
 
             {:obten_vista, pid} ->
                 vistaValida = Agent.get(:vValida, fn vista -> vista end)
-                #IO.inspect("Enviamos vista_valida:")
-                #IO.inspect(vistaValida)
-                #IO.inspect(pid)
                 send(pid, {:vista_valida, vistaValida, true})
 
             :procesa_situacion_servidores ->

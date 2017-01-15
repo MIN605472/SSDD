@@ -35,7 +35,7 @@ defmodule ServidorSA do
     #------------------- Funciones privadas -----------------------------
     defp realizar_copia(nodo_destino) do
         backup = Agent.get(:diccionario, fn x -> x end)
-        send(nodo_destino,{:escribe_backup, backup, Node.self()})
+        send({:servidor_sa, nodo_destino},{:escribe_backup, backup, Node.self()})
         receive do
             {:copia_realizada, realizada} -> realizada
 
@@ -44,94 +44,104 @@ defmodule ServidorSA do
         end
     end
 
-    defp latido_primario(vista, vista_valida, vista_guardada, nodo_servidor_gv) do
-        if vista_guardada.copia != vista.copia and vista.copia != :undefined 
-        and vista_valida.num_vista != 0 do            
-            exito = realizar_copia(vista.copia)
-            if exito do
-                envio_latidos(nodo_servidor_gv, vista.num_vista)
+    defp generar_latido(nodo_servidor_gv) do
+        vista_guardada = Agent.get(:vistaTentativa, fn x -> x end)
+
+        if vista_guardada.primario != Node.self() do
+            {vista, _} = ClienteGV.latido(nodo_servidor_gv, vista_guardada.num_vista)
+            Agent.update(:vistaTentativa, fn _ -> vista end)       
+        else
+            if vista_guardada.num_vista == 1 do
+                {vista, _} = ClienteGV.latido(nodo_servidor_gv, -1)
+                Agent.update(:vistaTentativa, fn _ -> vista end) 
             else
-                envio_latidos(nodo_servidor_gv, vista.num_vista-1)
-            end            
+                {vista, _} = ClienteGV.latido(nodo_servidor_gv, vista_guardada.num_vista)
+                #Si ha cambiado la copia desde el ultimo latido
+                if vista.num_vista != vista_guardada.num_vista and vista.copia != :undefined do
+                    exito = realizar_copia(vista.copia)
+                    if exito do
+                        Agent.update(:vistaTentativa, fn _ -> vista end)
+                    end
+                end
+            end
         end
     end
 
-    defp tratar_latido(vista, vista_valida, nodo_servidor_gv) do
-        vista_guardada = Agent.get(:vistaTentativa, fn x -> x end)
-        if vista.primario != Node.self() do
-            envio_latidos(nodo_servidor_gv, vista.num_vista)
-        else
-            latido_primario(vista, vista_valida, vista_guardada, nodo_servidor_gv)
-            if vista.num_vista == 1 do
-                envio_latidos(nodo_servidor_gv, -1)
-            end        
-        end        
-        Agent.update(:vistaTentativa, fn _ -> vista end)
-    end
-
-    def envio_latidos(nodo_servidor_gv, num_vista) do
-        {vista, _} = ClienteGV.latido(nodo_servidor_gv, num_vista)
-        {vista_valida, _} = ClienteGV.obten_vista(nodo_servidor_gv)
-        tratar_latido(vista, vista_valida, nodo_servidor_gv)
+    #Proceso concurrente que recuerda al principal cuando enviar un latido
+    def envio_latidos(pid_principal) do
+        send(pid_principal, :enviar_latido)
         Process.sleep(@intervalo_latido)
+        envio_latidos(pid_principal)
     end
 
     def init_sa(nodo_servidor_gv) do
         Process.register(self(), :servidor_sa)
-
         Agent.start_link(fn -> Map.new() end, name: :diccionario)
         vistaTentativa = %ServidorGV{num_vista: 0, primario: :undefined, copia: :undefined}
         Agent.start_link(fn -> vistaTentativa end, name: :vistaTentativa)
-        pid = spawn fn -> envio_latidos(nodo_servidor_gv, 0) end
-
-        bucle_recepcion_principal() 
+        spawn(__MODULE__, :envio_latidos, [self()])
+        #IO.inspect("Proceso registrado")
+        #IO.inspect(self())
+        #IO.inspect(Node.self())
+        #IO.inspect("Pid proceso latidos")
+        #IO.inspect(pid)
+        bucle_recepcion_principal(nodo_servidor_gv) 
     end
 
 
-    defp bucle_recepcion_principal() do
+    defp bucle_recepcion_principal(nodo_servidor_gv) do
+
         receive do
             # Solicitudes de lectura y escritura de clientes del servicio almace.
             {:lee, clave, nodo_origen}  ->  
-                send(nodo_origen, {:resultado, lee_diccionario(clave)})
+                send({:cliente_sa, nodo_origen}, {:resultado, lee_diccionario(clave)})
 
             {:escribe_generico, {clave, valor, true}, nodo_origen} ->
-                tratar_escritura_hash(clave, valor, nodo_origen)
+                tratar_escritura_hash(clave, valor, nodo_origen, :cliente_sa)
 
             {:escribe_generico, {clave, valor, false}, nodo_origen} ->
-                tratar_escritura(clave, valor, nodo_origen)
+                tratar_escritura(clave, valor, nodo_origen, :cliente_sa)
+
+            {:escribe_generico_b, {clave, valor, false}, nodo_origen} ->
+                tratar_escritura(clave, valor, nodo_origen, :servidor_sa)
 
             {:escribe_backup, diccionario, nodo_origen} ->
                 backup_copia(diccionario)
-                send(nodo_origen, {:copia_realizada, true})
+                send({:servidor_sa, nodo_origen}, {:copia_realizada, true})
+
+            :enviar_latido -> generar_latido(nodo_servidor_gv)
 
         end
-        bucle_recepcion_principal()
+        bucle_recepcion_principal(nodo_servidor_gv)
     end
 
     defp backup_copia(diccionario) do
         Agent.update(:diccionario, fn _ -> diccionario end)
     end
 
-    defp tratar_escritura(clave, valor, nodo_origen) do
-        {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
-        exito = escribe_copia(clave, valor)                
-        if ((copia == Node.self() and nodo_origen == primario) or primario == Node.self()) and exito do
+    defp tratar_escritura(clave, valor, nodo_origen, quien) do
+        vista_tentativa = Agent.get( :vistaTentativa , fn x -> x end)
+        exito = escribe_copia(clave, valor)
+        
+        if ((vista_tentativa.copia == Node.self() and nodo_origen == vista_tentativa.primario) 
+                or vista_tentativa.primario == Node.self()) and exito do
             escribe_diccionario(clave, valor)
-            send(nodo_origen,{:resultado, valor})
-        else
-            send(nodo_origen, {:resultado, :no_soy_primario_valido})
+            send({quien, nodo_origen}, { :resultado , valor})
+        else 
+            send({quien, nodo_origen}, { :resultado , :no_soy_primario_valido})
         end
     end
 
-     defp tratar_escritura_hash(clave, valor, nodo_origen) do
+     defp tratar_escritura_hash(clave, valor, nodo_origen, quien) do
         valor_hash = forma_string(clave,valor)
-        {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
+        vista_tentativa = Agent.get(:vistaTentativa, fn x -> x end)
         exito = escribe_copia(clave, valor_hash)                
-        if ((copia == Node.self() and nodo_origen == primario) or primario == Node.self()) and exito do
+        if ((vista_tentativa.copia == Node.self() and nodo_origen == vista_tentativa.primario)
+                or vista_tentativa.primario == Node.self()) and exito do
             escribe_diccionario(clave, valor_hash)
-            send(nodo_origen,{:resultado, valor})
+            send({quien, nodo_origen}, { :resultado , valor})
         else
-            send(nodo_origen, {:resultado, :no_soy_primario_valido})
+            send({quien, nodo_origen}, { :resultado , :no_soy_primario_valido})
         end
     end
 
@@ -142,10 +152,10 @@ defmodule ServidorSA do
     end
 
     defp escribe_copia(clave, valor) do
-        {_, _, copia} = Agent.get(:vistaTentativa, fn x -> x end)
-        if copia != Node.self() do
-            send({:servidor_sa, copia}, 
-                {:escribe_generico, {clave, valor, false}, self()})
+        vista_tentativa = Agent.get(:vistaTentativa, fn x -> x end)
+        if vista_tentativa.copia != Node.self() do
+            send({:servidor_sa, vista_tentativa.copia}, 
+                {:escribe_generico_b, {clave, valor, false}, Node.self()})
             receive do
                 {:resultado, valor} -> true
                 otro -> false
