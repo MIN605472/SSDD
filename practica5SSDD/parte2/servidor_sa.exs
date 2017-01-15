@@ -35,7 +35,7 @@ defmodule ServidorSA do
     #------------------- Funciones privadas -----------------------------
     defp realizar_copia(nodo_destino) do
         backup = Agent.get(:diccionario, fn x -> x end)
-        send(:escribe_backup, backup, Node.self())
+        send(nodo_destino,{:escribe_backup, backup, Node.self()})
         receive do
             {:copia_realizada, realizada} -> realizada
 
@@ -44,9 +44,9 @@ defmodule ServidorSA do
         end
     end
 
-    defp latido_primario(vista, vista_valida, vista_guardada) do
+    defp latido_primario(vista, vista_valida, vista_guardada, nodo_servidor_gv) do
         if vista_guardada.copia != vista.copia and vista.copia != :undefined 
-        and vista_valida.num_vista!=0 do            
+        and vista_valida.num_vista != 0 do            
             exito = realizar_copia(vista.copia)
             if exito do
                 envio_latidos(nodo_servidor_gv, vista.num_vista)
@@ -56,12 +56,12 @@ defmodule ServidorSA do
         end
     end
 
-    defp tratar_latido(vista, vista_valida) do
-        vista_guardada = Agent.get(:vistaTentativa, fn x -> x)
+    defp tratar_latido(vista, vista_valida, nodo_servidor_gv) do
+        vista_guardada = Agent.get(:vistaTentativa, fn x -> x end)
         if vista.primario != Node.self() do
             envio_latidos(nodo_servidor_gv, vista.num_vista)
         else
-            latido_primario(vista, vista_valida, vista_guardada)
+            latido_primario(vista, vista_valida, vista_guardada, nodo_servidor_gv)
             if vista.num_vista == 1 do
                 envio_latidos(nodo_servidor_gv, -1)
             end        
@@ -72,7 +72,7 @@ defmodule ServidorSA do
     def envio_latidos(nodo_servidor_gv, num_vista) do
         {vista, _} = ClienteGV.latido(nodo_servidor_gv, num_vista)
         {vista_valida, _} = ClienteGV.obten_vista(nodo_servidor_gv)
-        tratar_latido(vista, vista_valida)
+        tratar_latido(vista, vista_valida, nodo_servidor_gv)
         Process.sleep(@intervalo_latido)
     end
 

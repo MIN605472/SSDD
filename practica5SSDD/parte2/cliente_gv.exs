@@ -13,9 +13,9 @@ defmodule ClienteGV do
         send({:servidor_gv, nodo_servidor_gv}, {:latido, Node.self(), num_vista})
 
         receive do   # esperar respuesta del ping
-            {:vista_tentativa, vista, is_ok?} ->
+            {:vista_tentativa, vista, is_ok} ->
                 IO.inspect(vista)
-                {vista, is_ok?}
+                {vista, is_ok}
 
         after @tiempo_espera_de_respuesta ->
             IO.inspect("fallo")
