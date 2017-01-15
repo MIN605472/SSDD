@@ -33,85 +33,112 @@ defmodule ServidorSA do
 
 
     #------------------- Funciones privadas -----------------------------
-    def envio_latidos(nodo_servidor_gv, num_vista) do
-        {vista, _} = ClienteGV.latido(nodo_servidor_gv, num_vista)
-        Process.sleep(@intervalo_latido)
+    defp realizar_copia(nodo_destino) do
+        backup = Agent.get(:diccionario, fn x -> x end)
+        send(:escribe_backup, backup, Node.self())
+        receive do
+            {:copia_realizada, realizada} -> realizada
 
-        #Distinción de casos: primario, copia, espera...
-        #vista.primario == Node.self()
-        ##
-
-        vista_guardada = Agent.get(:vistaTentativa, fn x -> x)
-
-        if vista_guardada.copia != vista.copia do
-            realizar_copia(vista.copia)
+        after @intervalo_latido * 4 ->
+            false
         end
+    end
 
-        if vista.primario == Node.self() and not copiado do
-            realizar_copia(vista.copia)
-        end
-
-
-        IO.inspect(vista.num_vista)
-        if vista.num_vista == 1 do
-            Agent.update(:vistaTentativa, fn _ -> vista end)
-            envio_latidos(nodo_servidor_gv, -1)
-        else
-            if(#copiado) do
+    defp latido_primario(vista, vista_valida, vista_guardada) do
+        if vista_guardada.copia != vista.copia and vista.copia != :undefined 
+        and vista_valida.num_vista!=0 do            
+            exito = realizar_copia(vista.copia)
+            if exito do
                 envio_latidos(nodo_servidor_gv, vista.num_vista)
             else
                 envio_latidos(nodo_servidor_gv, vista.num_vista-1)
-            end
+            end            
         end
+    end
 
+    defp tratar_latido(vista, vista_valida) do
+        vista_guardada = Agent.get(:vistaTentativa, fn x -> x)
+        if vista.primario != Node.self() do
+            envio_latidos(nodo_servidor_gv, vista.num_vista)
+        else
+            latido_primario(vista, vista_valida, vista_guardada)
+            if vista.num_vista == 1 do
+                envio_latidos(nodo_servidor_gv, -1)
+            end        
+        end        
+        Agent.update(:vistaTentativa, fn _ -> vista end)
+    end
+
+    def envio_latidos(nodo_servidor_gv, num_vista) do
+        {vista, _} = ClienteGV.latido(nodo_servidor_gv, num_vista)
+        {vista_valida, _} = ClienteGV.obten_vista(nodo_servidor_gv)
+        tratar_latido(vista, vista_valida)
+        Process.sleep(@intervalo_latido)
     end
 
     def init_sa(nodo_servidor_gv) do
         Process.register(self(), :servidor_sa)
-        # Process.register(self(), :cliente_gv)       
 
-
-    #------------- INICIALIZACION ..........
         Agent.start_link(fn -> Map.new() end, name: :diccionario)
-        #vistaTentativa = %ServidorGV{num_vista: -1, primario: :undefined, copia: :undefined}
-        Agent.start_link(fn -> :empty end, name: :vistaTentativa)
+        vistaTentativa = %ServidorGV{num_vista: 0, primario: :undefined, copia: :undefined}
+        Agent.start_link(fn -> vistaTentativa end, name: :vistaTentativa)
         pid = spawn fn -> envio_latidos(nodo_servidor_gv, 0) end
 
-         # Poner estado inicial
         bucle_recepcion_principal() 
     end
 
 
     defp bucle_recepcion_principal() do
         receive do
-            {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
             # Solicitudes de lectura y escritura de clientes del servicio almace.
             {:lee, clave, nodo_origen}  ->  
                 send(nodo_origen, {:resultado, lee_diccionario(clave)})
 
-            {:escribe_generico, {clave, valor, hash?}, nodo_origen} ->
-                if hash? do
-                    valor = hash(valor)
-                end 
-                exito = escribe_copia(clave, valor)                
-                if exito do
-                    if (copia == Node.self() and nodo_origen == primario) or primario == Node.self() do
-                        escribe_diccionario(clave, valor)
-                        send(nodo_origen,{:resultado, valor})
-                    else
-                        send(nodo_origen, {:resultado, :no_soy_primario_valido})
-                    end
-                else
-                    send(nodo_origen, :fallo)
-                end
-                # ----------------- vuestro códio
+            {:escribe_generico, {clave, valor, true}, nodo_origen} ->
+                tratar_escritura_hash(clave, valor, nodo_origen)
 
+            {:escribe_generico, {clave, valor, false}, nodo_origen} ->
+                tratar_escritura(clave, valor, nodo_origen)
 
-        # --------------- OTROS MENSAJES QE NECESITEIS
-
+            {:escribe_backup, diccionario, nodo_origen} ->
+                backup_copia(diccionario)
+                send(nodo_origen, {:copia_realizada, true})
 
         end
         bucle_recepcion_principal()
+    end
+
+    defp backup_copia(diccionario) do
+        Agent.update(:diccionario, fn _ -> diccionario end)
+    end
+
+    defp tratar_escritura(clave, valor, nodo_origen) do
+        {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
+        exito = escribe_copia(clave, valor)                
+        if ((copia == Node.self() and nodo_origen == primario) or primario == Node.self()) and exito do
+            escribe_diccionario(clave, valor)
+            send(nodo_origen,{:resultado, valor})
+        else
+            send(nodo_origen, {:resultado, :no_soy_primario_valido})
+        end
+    end
+
+     defp tratar_escritura_hash(clave, valor, nodo_origen) do
+        valor_hash = forma_string(clave,valor)
+        {_, primario, copia} = Agent.get(:vistaTentativa, fn x -> x end)
+        exito = escribe_copia(clave, valor_hash)                
+        if ((copia == Node.self() and nodo_origen == primario) or primario == Node.self()) and exito do
+            escribe_diccionario(clave, valor_hash)
+            send(nodo_origen,{:resultado, valor})
+        else
+            send(nodo_origen, {:resultado, :no_soy_primario_valido})
+        end
+    end
+
+
+    defp forma_string(clave, valor) do
+        cadena_previa = lee_diccionario(clave)
+        hash(cadena_previa<>valor)
     end
 
     defp escribe_copia(clave, valor) do
@@ -122,6 +149,8 @@ defmodule ServidorSA do
             receive do
                 {:resultado, valor} -> true
                 otro -> false
+
+                after @intervalo_latido *2 -> false
             end
         else
             true
