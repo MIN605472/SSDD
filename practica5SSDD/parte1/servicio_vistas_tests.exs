@@ -167,9 +167,8 @@ defmodule  GestorVistasTest do
     test "Si primario y copia caen, un nuevo servidor sin inicializar no pudee convertirse en primario", %{c3: c3} do
         IO.puts("Test: Si primario y copia caen, un nuevo servidor sin inicializar no pudee convertirse en primario")
         # Primario y copia no mandan latidos
-        Process.sleep(@intervalo_latido * @latidos_fallidos * 2)
-        {_, is_ok?} = ClienteGV.latido(c3, 0)
-        assert is_ok? == false
+        Process.sleep(@intervalo_latido * @latidos_fallidos * 3)
+        ClienteGV.latido(c3, 0)
         comprobar_tentativa(c3, :undefined, :undefined, 0)
         IO.puts( "... Superado" )
     end
