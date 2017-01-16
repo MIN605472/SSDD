@@ -1,3 +1,9 @@
+## AUTOR: Marius Ionut Nemtanu / Pablo Piedrafita Castañeda
+## NIA:  605472 / 691812
+## FICHERO: servidor_sa.exs
+## TIEMPO: 10~12
+## DESCRIPCI’ON: Servidor de almacenamiento, contiene las operaciones de copiado
+## de datos, lectura, escritura...
 Code.require_file("#{__DIR__}/cliente_gv.exs")
 
 defmodule ServidorSA do
