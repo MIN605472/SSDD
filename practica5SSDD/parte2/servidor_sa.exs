@@ -2,7 +2,7 @@ Code.require_file("#{__DIR__}/cliente_gv.exs")
 
 defmodule ServidorSA do
     
-                
+    #No es necesario         
     defstruct [:num_vista, :primario, :copia] 
 
 
@@ -33,6 +33,7 @@ defmodule ServidorSA do
 
 
     #------------------- Funciones privadas -----------------------------
+    #Envia un mensaje con la copia de los datos al nodo_destino
     defp realizar_copia(nodo_destino) do
         backup = Agent.get(:diccionario, fn x -> x end)
         send({:servidor_sa, nodo_destino},{:escribe_backup, backup, Node.self()})
@@ -44,6 +45,7 @@ defmodule ServidorSA do
         end
     end
 
+    #En función de la vista tentativa que tenemos enviamos un latido
     defp generar_latido(nodo_servidor_gv) do
         vista_guardada = Agent.get(:vistaTentativa, fn x -> x end)
 
@@ -74,21 +76,18 @@ defmodule ServidorSA do
         envio_latidos(pid_principal)
     end
 
+    #Inicialización del sistema, lanzamos un proceso concurrente para los latidos
+    #e inicializamos dos agentes, para los datos y para la vista tentativa
     def init_sa(nodo_servidor_gv) do
         Process.register(self(), :servidor_sa)
         Agent.start_link(fn -> Map.new() end, name: :diccionario)
         vistaTentativa = %ServidorGV{num_vista: 0, primario: :undefined, copia: :undefined}
         Agent.start_link(fn -> vistaTentativa end, name: :vistaTentativa)
         spawn(__MODULE__, :envio_latidos, [self()])
-        #IO.inspect("Proceso registrado")
-        #IO.inspect(self())
-        #IO.inspect(Node.self())
-        #IO.inspect("Pid proceso latidos")
-        #IO.inspect(pid)
         bucle_recepcion_principal(nodo_servidor_gv) 
     end
 
-
+    #Bucle de tratamiento de mensajes
     defp bucle_recepcion_principal(nodo_servidor_gv) do
 
         receive do
@@ -115,10 +114,12 @@ defmodule ServidorSA do
         bucle_recepcion_principal(nodo_servidor_gv)
     end
 
+    #Actualiza los datos locales con el diccionario que recibe como parametro (para la copia)
     defp backup_copia(diccionario) do
         Agent.update(:diccionario, fn _ -> diccionario end)
     end
 
+    #nodo_origen nos pide escribir clave/valor, quien = :cliente_sa o :servidor_sa
     defp tratar_escritura(clave, valor, nodo_origen, quien) do
         vista_tentativa = Agent.get( :vistaTentativa , fn x -> x end)
         exito = escribe_copia(clave, valor)
@@ -132,7 +133,9 @@ defmodule ServidorSA do
         end
     end
 
-     defp tratar_escritura_hash(clave, valor, nodo_origen, quien) do
+    #nodo_origen nos pide escribir clave/valor hasheado, quien = :cliente_sa o :servidor_sa
+    #esta función no la ejecutará nunca un copia
+    defp tratar_escritura_hash(clave, valor, nodo_origen, quien) do
         valor_hash = forma_string(clave,valor)
         vista_tentativa = Agent.get(:vistaTentativa, fn x -> x end)
         exito = escribe_copia(clave, valor_hash)                
@@ -145,12 +148,14 @@ defmodule ServidorSA do
         end
     end
 
-
+    #Creamos el hash con el valor previo de clave y el nuevo valor
     defp forma_string(clave, valor) do
         cadena_previa = lee_diccionario(clave)
         hash(cadena_previa<>valor)
     end
 
+    #Si somos el nodo primario: enviamos a la copia un mensaje de escritura
+    #Si somos el copia: no tenemos que escribir en ningun otro nodo
     defp escribe_copia(clave, valor) do
         vista_tentativa = Agent.get(:vistaTentativa, fn x -> x end)
         if vista_tentativa.copia != Node.self() do
@@ -167,11 +172,13 @@ defmodule ServidorSA do
         end
     end
 
+    #Devuelve el valor asociado a clave
     @spec lee_diccionario(String.t) :: String.t
     defp lee_diccionario(clave) do
         Agent.get(:diccionario, fn map -> Map.get(map, clave, "") end)        
     end
 
+    #Modifica el valor asociado a clave o lo inicializa con valor
     defp escribe_diccionario(clave, valor) do
         claves = Agent.get(:diccionario, fn x -> x end)
         nuevas_claves = Map.update(claves, clave, valor, fn _ -> valor end)
